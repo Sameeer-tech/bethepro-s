@@ -599,35 +599,267 @@
     font-weight: 600;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
+/* Basic responsive fixes */
+@media (max-width: 1024px) {
     .enrollment-wrapper {
-        grid-template-columns: 1fr;
-        gap: 2rem;
+        gap: 2.5rem;
+        padding: 2rem;
     }
     
-    .form-grid {
-        grid-template-columns: 1fr;
+    .enroll-hero {
+        padding: 100px 0 70px;
     }
     
-    .payment-methods {
-        grid-template-columns: 1fr;
+    .hero-content h1 {
+        font-size: 2.8rem;
+    }
+    
+    .security-badges {
+        gap: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .enroll-hero {
+        padding: 80px 0 50px;
+    }
+    
+    .hero-content h1 {
+        font-size: 2.2rem;
+        line-height: 1.2;
+    }
+    
+    .hero-content p {
+        font-size: 1rem;
+        padding: 0 15px;
     }
     
     .security-badges {
         gap: 1rem;
+        justify-content: center;
+        flex-direction: column;
+        align-items: center;
     }
     
-    .hero-content h1 {
-        font-size: 2rem;
+    .security-item {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.9rem;
     }
     
-    .trust-stats {
-        grid-template-columns: repeat(2, 1fr);
+    .enrollment-section {
+        padding: 40px 0;
+    }
+    
+    .enrollment-wrapper {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        padding: 1rem;
+    }
+    
+    .course-summary {
+        order: 2;
+        position: static;
+        padding: 1.5rem;
+        margin-top: 2rem;
+    }
+    
+    .enrollment-form {
+        order: 1;
+        padding: 1.5rem;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        padding: 12px;
+        font-size: 16px; /* Prevent zoom on mobile */
+    }
+    
+    .payment-methods {
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
+    }
+    
+    .payment-method {
+        padding: 12px;
+        text-align: center;
     }
     
     .form-navigation {
         flex-direction: column;
         gap: 1rem;
+        margin-top: 2rem;
+    }
+    
+    .btn-prev,
+    .btn-next,
+    .btn-success {
+        width: 100%;
+        padding: 12px 20px;
+        font-size: 1rem;
+    }
+    
+    .step-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .step-indicator {
+        margin-bottom: 0;
+    }
+    
+    .pricing-breakdown {
+        padding: 1.5rem;
+    }
+    
+    .feature-item {
+        font-size: 0.9rem;
+    }
+    
+    .course-features {
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
+    }
+}
+    
+    .step-indicator {
+        margin-bottom: 1.5rem;
+    }
+    
+    .course-summary {
+        padding: 1.5rem;
+    }
+    
+    .price-breakdown {
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .enroll-hero {
+        padding: 60px 0 40px;
+    }
+    
+    .hero-content h1 {
+        font-size: 1.8rem;
+        margin-bottom: 0.8rem;
+    }
+    
+    .hero-content p {
+        font-size: 0.95rem;
+        padding: 0 10px;
+    }
+    
+    .security-badges {
+        gap: 0.8rem;
+    }
+    
+    .security-item {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.8rem;
+    }
+    
+    .enrollment-wrapper {
+        padding: 0.8rem;
+        gap: 1.5rem;
+    }
+    
+    .course-summary {
+        padding: 1rem;
+    }
+    
+    .enrollment-form {
+        padding: 1rem;
+    }
+    
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        padding: 10px;
+        font-size: 16px;
+    }
+    
+    .payment-method {
+        padding: 10px;
+        font-size: 0.9rem;
+    }
+    
+    .btn-prev,
+    .btn-next,
+    .btn-success {
+        padding: 10px 16px;
+        font-size: 0.9rem;
+    }
+    
+    .step-header h3 {
+        font-size: 1.1rem;
+    }
+    
+    .course-details h4 {
+        font-size: 1.1rem;
+    }
+    
+    .pricing-breakdown {
+        padding: 1rem;
+    }
+    
+    .price-item,
+    .price-total {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 400px) {
+    .enrollment-wrapper {
+        padding: 0.8rem;
+    }
+    
+    .hero-content h1 {
+        font-size: 1.6rem;
+    }
+    
+    .form-container {
+        padding: 1rem;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        padding: 6px 8px;
+        font-size: 0.85rem;
+    }
+    
+    .btn-prev,
+    .btn-next {
+        padding: 10px 16px;
+        font-size: 0.9rem;
+    }
+    
+    .payment-method {
+        padding: 8px;
+        font-size: 0.85rem;
+    }
+    
+    .step {
+        font-size: 0.7rem;
+        padding: 6px 10px;
+    }
+    
+    .course-summary {
+        padding: 0.8rem;
+    }
+    
+    .price-breakdown {
+        padding: 0.8rem;
     }
 }
