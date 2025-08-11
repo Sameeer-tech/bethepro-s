@@ -42,30 +42,35 @@ try {
     $courses = [];
 }
 
+// Get enrollments from database
+$enrollments = [];
+try {
+    $stmt = $pdo->query("SELECT * FROM enrollments ORDER BY enrollment_date DESC");
+    $enrollments = $stmt->fetchAll();
+} catch (PDOException $e) {
+    // If table doesn't exist or database error, use empty array
+    $enrollments = [];
+}
+
 // Update stats with real data
 $user_count = count($users);
 $active_users = count(array_filter($users, function($user) { return $user['status'] === 'Active'; }));
 $course_count = count($courses);
+$enrollment_count = count($enrollments);
 
-// Mock data for demonstration
 $stats = [
     'total_users' => $user_count,
     'total_courses' => $course_count,
-    'total_enrollments' => 3456,
-    'monthly_revenue' => 89750,
+    'total_enrollments' => $enrollment_count,
+    'monthly_revenue' => $enrollment_count * 99, // Simple calculation
     'new_users_today' => 23,
     'active_sessions' => $active_users,
     'unread_messages' => count(array_filter($messages, function($msg) { return $msg['status'] === 'unread'; })),
     'total_messages' => count($messages)
 ];
 
-// Recent enrollments mock data
-$recent_enrollments = [
-    ['name' => 'John Doe', 'course' => 'Fresher Interview Mastery', 'amount' => 99, 'time' => '2 hours ago'],
-    ['name' => 'Sarah Miller', 'course' => 'Mid-Career Advancement', 'amount' => 149, 'time' => '5 hours ago'],
-    ['name' => 'Michael Johnson', 'course' => 'Executive Interview Prep', 'amount' => 199, 'time' => '1 day ago'],
-    ['name' => 'Emily Davis', 'course' => 'Tech Interview Fundamentals', 'amount' => 129, 'time' => '2 days ago']
-];
+// Use real enrollments data
+$recent_enrollments = $enrollments;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -224,23 +229,34 @@ $recent_enrollments = [
                                 <a href="#" class="btn btn-primary">View All</a>
                             </div>
                             <div class="activity-list">
+                                <?php if (empty($recent_enrollments)): ?>
+                                <div class="activity-item">
+                                    <div class="activity-content">
+                                        <div class="activity-title">No enrollments yet</div>
+                                        <div style="font-size: 0.9rem; color: var(--gray-dark);">
+                                            Enrollments will appear here when students sign up
+                                        </div>
+                                    </div>
+                                </div>
+                                <?php else: ?>
                                 <?php foreach ($recent_enrollments as $enrollment): ?>
                                 <div class="activity-item">
                                     <div class="activity-icon">
                                         <i class="fas fa-user-graduate"></i>
                                     </div>
                                     <div class="activity-content">
-                                        <div class="activity-title"><?php echo htmlspecialchars($enrollment['name']); ?></div>
+                                        <div class="activity-title"><?php echo htmlspecialchars($enrollment['first_name'] . ' ' . $enrollment['last_name']); ?></div>
                                         <div style="font-size: 0.9rem; color: var(--gray-dark);">
-                                            Enrolled in <?php echo htmlspecialchars($enrollment['course']); ?>
+                                            Email: <?php echo htmlspecialchars($enrollment['email']); ?>
                                         </div>
-                                        <div class="activity-time"><?php echo $enrollment['time']; ?></div>
+                                        <div class="activity-time"><?php echo date('M j, Y', strtotime($enrollment['enrollment_date'])); ?></div>
                                     </div>
                                     <div style="font-weight: 600; color: var(--success-color);">
-                                        $<?php echo $enrollment['amount']; ?>
+                                        $99
                                     </div>
                                 </div>
                                 <?php endforeach; ?>
+                                <?php endif; ?>
                             </div>
                         </div>
 
@@ -406,32 +422,45 @@ $recent_enrollments = [
                         <table class="data-table">
                             <thead>
                                 <tr>
-                                    <th>Student</th>
-                                    <th>Course</th>
-                                    <th>Amount</th>
+                                    <th>Enrollment ID</th>
+                                    <th>Student Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Country</th>
+                                    <th>Experience</th>
                                     <th>Date</th>
                                     <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
+                                <?php if (empty($recent_enrollments)): ?>
+                                <tr>
+                                    <td colspan="9" style="text-align: center; padding: 2rem; color: var(--gray-dark);">
+                                        <i class="fas fa-user-graduate" style="font-size: 3rem; margin-bottom: 1rem; display: block; opacity: 0.3;"></i>
+                                        <strong>No enrollments yet</strong><br>
+                                        <small>Student enrollments will appear here</small>
+                                    </td>
+                                </tr>
+                                <?php else: ?>
                                 <?php foreach ($recent_enrollments as $enrollment): ?>
                                 <tr>
-                                    <td><?php echo htmlspecialchars($enrollment['name']); ?></td>
-                                    <td><?php echo htmlspecialchars($enrollment['course']); ?></td>
-                                    <td>$<?php echo $enrollment['amount']; ?></td>
-                                    <td><?php echo $enrollment['time']; ?></td>
-                                    <td><span class="status-badge status-active">Active</span></td>
+                                    <td><?php echo htmlspecialchars($enrollment['enrollment_id']); ?></td>
+                                    <td><?php echo htmlspecialchars($enrollment['first_name'] . ' ' . $enrollment['last_name']); ?></td>
+                                    <td><?php echo htmlspecialchars($enrollment['email']); ?></td>
+                                    <td><?php echo htmlspecialchars($enrollment['phone']); ?></td>
+                                    <td><?php echo htmlspecialchars($enrollment['country']); ?></td>
+                                    <td><?php echo htmlspecialchars($enrollment['experience_level']); ?></td>
+                                    <td><?php echo date('M j, Y', strtotime($enrollment['enrollment_date'])); ?></td>
+                                    <td><span class="status-badge status-<?php echo strtolower($enrollment['status']); ?>"><?php echo ucfirst($enrollment['status']); ?></span></td>
                                     <td>
-                                        <button class="btn btn-secondary" style="padding: 0.5rem;">
+                                        <button class="btn btn-secondary" style="padding: 0.5rem;" onclick="alert('Student: <?php echo htmlspecialchars($enrollment['first_name'] . ' ' . $enrollment['last_name']); ?>\\nEmail: <?php echo htmlspecialchars($enrollment['email']); ?>\\nPhone: <?php echo htmlspecialchars($enrollment['phone']); ?>\\nCountry: <?php echo htmlspecialchars($enrollment['country']); ?>\\nExperience: <?php echo htmlspecialchars($enrollment['experience_level']); ?>\\nSchedule: <?php echo htmlspecialchars($enrollment['schedule_preference']); ?><?php if($enrollment['career_goals']): ?>\\nGoals: <?php echo htmlspecialchars($enrollment['career_goals']); ?><?php endif; ?>')">
                                             <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button class="btn btn-primary" style="padding: 0.5rem;">
-                                            <i class="fas fa-certificate"></i>
                                         </button>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
+                                <?php endif; ?>
                             </tbody>
                         </table>
                     </div>

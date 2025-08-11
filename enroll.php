@@ -111,8 +111,12 @@
                 <!-- Enrollment Form -->
                 <div class="enrollment-form">
                     <form id="enrollmentForm" method="POST" action="process_enrollment.php">
+                        <!-- Hidden course info fields -->
+                        <input type="hidden" name="courseName" value="<?php echo htmlspecialchars($course_name); ?>">
+                        <input type="hidden" name="coursePrice" value="<?php echo htmlspecialchars($course_price); ?>">
+                        <input type="hidden" name="courseDuration" value="<?php echo htmlspecialchars($course_duration); ?>">
                         <!-- Step 1: Personal Information -->
-                        <div class="form-step active" data-step="1">
+                        <div class="form-step active" data-step="1" style="display: block;">
                             <div class="step-header">
                                 <h3><i class="fas fa-user"></i> Personal Information</h3>
                                 <div class="step-indicator">Step 1 of 3</div>
@@ -170,7 +174,7 @@
                         </div>
 
                         <!-- Step 2: Course Preferences -->
-                        <div class="form-step" data-step="2">
+                        <div class="form-step" data-step="2" style="display: block;">
                             <div class="step-header">
                                 <h3><i class="fas fa-cogs"></i> Course Preferences</h3>
                                 <div class="step-indicator">Step 2 of 3</div>
@@ -213,7 +217,7 @@
                         </div>
 
                         <!-- Step 3: Payment Information -->
-                        <div class="form-step" data-step="3">
+                        <div class="form-step" data-step="3" style="display: block;">
                             <div class="step-header">
                                 <h3><i class="fas fa-credit-card"></i> Payment Information</h3>
                                 <div class="step-indicator">Step 3 of 3</div>
@@ -302,7 +306,7 @@
                             <button type="button" class="btn-primary" id="nextBtn">
                                 Next <i class="fas fa-arrow-right"></i>
                             </button>
-                            <button type="submit" class="btn-success" id="submitBtn" style="display: none;">
+                            <button type="submit" class="btn-success" id="submitBtn" style="display: block;">
                                 <i class="fas fa-lock"></i> Complete Enrollment
                             </button>
                         </div>
@@ -344,6 +348,6 @@
 
     <?php include 'assets/footer.php'; ?>
 
-    <script src="js/enroll.js"></script>
+    <!-- <script src="js/enroll.js"></script> -->
 </body>
 </html>

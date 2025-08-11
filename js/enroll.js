@@ -302,27 +302,18 @@ function updatePricing(additionalCost) {
 }
 
 function handleFormSubmission(e) {
-    e.preventDefault();
-    
+    // Only prevent submission if validation fails
     if (!validateCurrentStep()) {
+        e.preventDefault();
         return;
     }
     
-    // Show loading state
+    // Show loading state but let form submit normally
     const submitBtn = document.getElementById('submitBtn');
-    const originalText = submitBtn.innerHTML;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
     submitBtn.disabled = true;
     
-    // Simulate payment processing
-    setTimeout(() => {
-        showNotification('Enrollment successful! Welcome to BeThePro\'s!', 'success');
-        
-        // Redirect to success page after 2 seconds
-        setTimeout(() => {
-            window.location.href = 'enrollment-success.php';
-        }, 2000);
-    }, 3000);
+    // Form will submit normally to process_enrollment.php
 }
 
 // Utility functions
