@@ -363,12 +363,13 @@ nav {
         </button>
         
         <ul class="nav-links" id="navLinks">
-          <li><a href="index.php">Home</a></li>
+          <li><a href="/bethepros-website(main)/index.php">Home</a></li>
           <li><a href="#features">Features</a></li>
-          <li><a href="courses.php">Courses</a></li>
+          <li><a href="/bethepros-website(main)/courses.php">Courses</a></li>
           <li><a href="#testimonials">Success Stories</a></li>
-          <li><a href="contact.php">Contact</a></li>
-          <li><a href="about.php">About Us</a></li>
+          <li><a href="/bethepros-website(main)/quiz/main.php">Quiz</a></li>
+          <li><a href="/bethepros-website(main)/contact.php">Contact</a></li>
+          <li><a href="/bethepros-website(main)/about.php">About Us</a></li>
         </ul>
         <?php if(isset($_SESSION['user_id'])): ?>
             <div class="user-menu">
