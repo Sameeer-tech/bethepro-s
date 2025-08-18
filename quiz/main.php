@@ -681,8 +681,11 @@ function submitQuiz() {
   let wrongAnswersHtml = '';
   if (wrongAnswers.length > 0) {
     wrongAnswersHtml = `
-      <div class="wrong-answers-review" style="margin-top: 30px;">
-        <h4 style="color: #dc3545; margin-bottom: 20px;">📚 Review Your Mistakes:</h4>
+      <div class="wrong-answers-review" style="margin-top: 30px; position: relative;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h4 style="color: #dc3545; margin: 0;">📚 Review Your Mistakes:</h4>
+          <button onclick="closeWrongAnswers()" style="background: #f8f9fa; border: 2px solid #dee2e6; color: #6c757d; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; transition: all 0.3s ease;" onmouseover="this.style.background='#e9ecef'; this.style.borderColor='#adb5bd'; this.style.color='#495057'" onmouseout="this.style.background='#f8f9fa'; this.style.borderColor='#dee2e6'; this.style.color='#6c757d'" title="Close review section">&times;</button>
+        </div>
         <div class="mistakes-container">
     `;
     
@@ -785,6 +788,13 @@ function toggleMistake(index) {
   } else {
     content.style.display = 'none';
     arrow.style.transform = 'rotate(0deg)';
+  }
+}
+
+function closeWrongAnswers() {
+  const wrongAnswersSection = document.querySelector('.wrong-answers-review');
+  if (wrongAnswersSection) {
+    wrongAnswersSection.style.display = 'none';
   }
 }
 
