@@ -163,6 +163,129 @@ include '../assets/loader.php';
     .footer-section ul li a { color: var(--gray-medium) !important; }
     .footer-section ul li a:hover { color: var(--white) !important; }
     
+    /* Wrong Answers Review Section Styles */
+    .wrong-answers-review {
+      position: relative;
+      margin-top: 25px;
+      border: 2px solid #e9ecef;
+      border-radius: 16px;
+      background: #f8f9fa;
+      overflow: hidden;
+    }
+    .wrong-answers-header {
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      color: white;
+      padding: 16px 20px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .wrong-answers-title {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .wrong-answers-close {
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+    .wrong-answers-close:hover {
+      background: rgba(255,255,255,0.3);
+      border-color: rgba(255,255,255,0.5);
+      transform: scale(1.1);
+    }
+    .wrong-answers-content {
+      max-height: 400px;
+      overflow-y: auto;
+      padding: 20px;
+    }
+    .wrong-answers-content::-webkit-scrollbar {
+      width: 6px;
+    }
+    .wrong-answers-content::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 3px;
+    }
+    .wrong-answers-content::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 3px;
+    }
+    .wrong-answers-content::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
+    }
+    .wrong-answer-card {
+      background: white;
+      border: 1px solid #dee2e6;
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      transition: all 0.3s ease;
+    }
+    .wrong-answer-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transform: translateY(-2px);
+    }
+    .wrong-answer-card:last-child {
+      margin-bottom: 0;
+    }
+    .question-number {
+      color: var(--primary-color);
+      font-weight: 700;
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .question-text {
+      color: #333;
+      font-weight: 600;
+      margin-bottom: 14px;
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
+    .answer-comparison {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .user-answer, .correct-answer {
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+    .user-answer {
+      background: #f8d7da;
+      border-left: 4px solid #dc3545;
+    }
+    .correct-answer {
+      background: #d4edda;
+      border-left: 4px solid #28a745;
+    }
+    .answer-text.incorrect {
+      color: #721c24;
+      font-weight: 500;
+    }
+    .answer-text.correct {
+      color: #155724;
+      font-weight: 500;
+    }
+    
     @media (max-width: 768px) {
       .quiz-banner h1 { font-size: 2.5rem; }
       .quiz-banner p { font-size: 1rem; }
@@ -173,6 +296,37 @@ include '../assets/loader.php';
       .quiz-modal-content { padding: 12px; } 
       .quiz-banner { padding: 60px 0; }
       .quiz-banner h1 { font-size: 2rem; }
+      .wrong-answers-header {
+        padding: 12px 16px;
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+      }
+      .wrong-answers-title {
+        font-size: 1rem;
+      }
+      .wrong-answers-content {
+        max-height: 300px;
+        padding: 15px;
+      }
+      .wrong-answer-card {
+        padding: 14px;
+        margin-bottom: 12px;
+      }
+      .question-number {
+        font-size: 0.8rem;
+      }
+      .question-text {
+        font-size: 0.9rem;
+        margin-bottom: 12px;
+      }
+      .answer-comparison {
+        gap: 8px;
+      }
+      .user-answer, .correct-answer {
+        padding: 10px 12px;
+        font-size: 0.85rem;
+      }
     }
   </style>
 </head>
@@ -681,40 +835,30 @@ function submitQuiz() {
   let wrongAnswersHtml = '';
   if (wrongAnswers.length > 0) {
     wrongAnswersHtml = `
-      <div class="wrong-answers-review" style="margin-top: 30px; position: relative;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-          <h4 style="color: #dc3545; margin: 0;">📚 Review Your Mistakes:</h4>
-          <button onclick="closeWrongAnswers()" style="background: #f8f9fa; border: 2px solid #dee2e6; color: #6c757d; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; transition: all 0.3s ease;" onmouseover="this.style.background='#e9ecef'; this.style.borderColor='#adb5bd'; this.style.color='#495057'" onmouseout="this.style.background='#f8f9fa'; this.style.borderColor='#dee2e6'; this.style.color='#6c757d'" title="Close review section">&times;</button>
+      <div class="wrong-answers-review" id="wrongAnswersReview">
+        <div class="wrong-answers-header">
+          <h5 class="wrong-answers-title">
+            <i class="fas fa-lightbulb"></i>
+            Review Your Mistakes (${wrongAnswers.length} incorrect)
+          </h5>
+          <button class="wrong-answers-close" onclick="hideWrongAnswers()" title="Close Review">×</button>
         </div>
-        <div class="mistakes-container">
+        <div class="wrong-answers-content">
     `;
     
     wrongAnswers.forEach((item, index) => {
       wrongAnswersHtml += `
-        <div class="mistake-item" style="margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
-          <div class="mistake-header" style="background: #f8f9fa; padding: 15px; cursor: pointer; border-bottom: 1px solid #ddd;" onclick="toggleMistake(${index})">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-              <span style="font-weight: bold;">
-                <span style="color: #dc3545; margin-right: 10px;">❌</span>
-                Question ${item.questionNumber}: ${item.question}
-              </span>
-              <span id="arrow-${index}" style="font-size: 1.2rem; transition: transform 0.3s ease;">▼</span>
+        <div class="wrong-answer-card">
+          <div class="question-number">Question ${item.questionNumber}</div>
+          <div class="question-text">${item.question}</div>
+          <div class="answer-comparison">
+            <div class="user-answer">
+              <strong>Your Answer:</strong> 
+              <span class="answer-text incorrect">${item.userAnswer}  </span>
             </div>
-          </div>
-          <div id="mistake-content-${index}" class="mistake-content" style="display: none; padding: 20px; background: white;">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-              <div>
-                <p style="margin-bottom: 10px; font-weight: bold;">Your Answer:</p>
-                <div style="background: #f8d7da; color: #721c24; padding: 12px; border-radius: 5px; border-left: 4px solid #dc3545;">
-                  <span style="color: #dc3545; margin-right: 8px;">❌</span> ${item.userAnswer}
-                </div>
-              </div>
-              <div>
-                <p style="margin-bottom: 10px; font-weight: bold;">Correct Answer:</p>
-                <div style="background: #d4edda; color: #155724; padding: 12px; border-radius: 5px; border-left: 4px solid #28a745;">
-                  <span style="color: #28a745; margin-right: 8px;">✅</span> ${item.correctAnswer}
-                </div>
-              </div>
+            <div class="correct-answer">
+              <strong>Correct Answer:</strong> 
+              <span class="answer-text correct">${item.correctAnswer}</span>
             </div>
           </div>
         </div>
@@ -723,19 +867,6 @@ function submitQuiz() {
     
     wrongAnswersHtml += `
         </div>
-        <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #ffc107;">
-          <p style="margin: 0; color: #856404;">
-            <span style="color: #ffc107; margin-right: 8px;">💡</span>
-            <strong>Tip:</strong> Review these concepts to improve your knowledge. Consider taking the quiz again after studying!
-          </p>
-        </div>
-      </div>
-    `;
-  } else {
-    wrongAnswersHtml = `
-      <div style="margin-top: 30px; padding: 20px; background: #28a745; color: white; border-radius: 8px; text-align: center;">
-        <h4 style="margin-bottom: 10px;">🎉 Perfect Score!</h4>
-        <p style="margin: 0;">You answered all questions correctly! Excellent work!</p>
       </div>
     `;
   }
@@ -757,6 +888,7 @@ function submitQuiz() {
       
       <div style="margin-top: 30px; display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
         <button style="background: var(--primary-color); color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-size: 1rem;" onclick="restartQuiz()">Take Another Quiz</button>
+        ${wrongAnswers.length > 0 ? '<button id="showReviewBtn" style="background: #17a2b8; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-size: 1rem; display: none;" onclick="showWrongAnswers()">Show Review</button>' : ''}
         <button style="background: #6c757d; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-size: 1rem;" onclick="closeQuizModal()">Back to Categories</button>
       </div>
     </div>
@@ -778,23 +910,27 @@ function restartQuiz() {
   showQuestion();
 }
 
-function toggleMistake(index) {
-  const content = document.getElementById(`mistake-content-${index}`);
-  const arrow = document.getElementById(`arrow-${index}`);
+function hideWrongAnswers() {
+  const reviewSection = document.getElementById('wrongAnswersReview');
+  const showBtn = document.getElementById('showReviewBtn');
   
-  if (content.style.display === 'none' || content.style.display === '') {
-    content.style.display = 'block';
-    arrow.style.transform = 'rotate(180deg)';
-  } else {
-    content.style.display = 'none';
-    arrow.style.transform = 'rotate(0deg)';
+  if (reviewSection) {
+    reviewSection.style.display = 'none';
+  }
+  if (showBtn) {
+    showBtn.style.display = 'inline-block';
   }
 }
 
-function closeWrongAnswers() {
-  const wrongAnswersSection = document.querySelector('.wrong-answers-review');
-  if (wrongAnswersSection) {
-    wrongAnswersSection.style.display = 'none';
+function showWrongAnswers() {
+  const reviewSection = document.getElementById('wrongAnswersReview');
+  const showBtn = document.getElementById('showReviewBtn');
+  
+  if (reviewSection) {
+    reviewSection.style.display = 'block';
+  }
+  if (showBtn) {
+    showBtn.style.display = 'none';
   }
 }
 
