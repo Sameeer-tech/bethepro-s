@@ -13,6 +13,7 @@ session_start();
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/contact.css">
     <link rel="stylesheet" href="css/hero.css">
+    <link rel="stylesheet" href="css/animations.css">
 </head>
 <body class="loading">
     <?php

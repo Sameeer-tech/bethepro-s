@@ -9,6 +9,7 @@ if(!isset($_SESSION)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <link rel="stylesheet" href="css/animations.css">
 </head>
 <body>
 <style>
@@ -350,7 +351,6 @@ nav {
 </style>
 
 
-
  <header>
       <nav class="container">
         <div class="logo">BeThePro's</div>
@@ -364,9 +364,10 @@ nav {
         
         <ul class="nav-links" id="navLinks">
           <li><a href="/bethepros-website(main)/index.php">Home</a></li>
-          <li><a href="/bethepros-website(main)/quiz/main.php">Quiz</a></li>
+          <li><a href="/bethepros-website(main)/preparation.php">Preparation</a></li>
           <li><a href="/bethepros-website(main)/courses.php">Courses</a></li>
           <li><a href="#testimonials">Success Stories</a></li>
+          <li><a href="/bethepros-website(main)/quiz/main.php">Quiz</a></li>
           <li><a href="/bethepros-website(main)/contact.php">Contact</a></li>
           <li><a href="/bethepros-website(main)/about.php">About Us</a></li>
         </ul>

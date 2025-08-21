@@ -38,8 +38,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <link href="css/login.css" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <h2>Login</h2>
+    <div class="container form-container">
+        <div class="brand-header">
+            <div class="brand-logo">BeThePro's</div>
+            <div class="brand-tagline">Master Your Interview Skills</div>
+        </div>
+        <h2>Welcome Back</h2>
         <?php if (isset($_SESSION['success'])): ?>
             <div class="alert alert-success"><?php echo htmlspecialchars($_SESSION['success']); ?></div>
             <?php unset($_SESSION['success']); ?>

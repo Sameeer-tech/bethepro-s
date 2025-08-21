@@ -6,7 +6,7 @@
     <title>About Us - BeThePro's</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/About.css">
-
+    <link rel="stylesheet" href="css/animations.css">
    
 </head>
 <body class="loading">
@@ -31,15 +31,15 @@ include 'assets/header.php';
     </header>
 
     <!-- About Hero Section -->
-    <section class="about-hero">
+    <section class="about-hero animate-fade-in">
         <div class="container">
-            <h1>About BeThePro's</h1>
-            <p>Empowering careers through expert interview preparation and professional development since 2020</p>
+            <h1 class="animate-slide-up">About BeThePro's</h1>
+            <p class="animate-scale-in">Empowering careers through expert interview preparation and professional development since 2020</p>
         </div>
     </section>
 
     <!-- Mission Section -->
-    <section class="mission-section">
+    <section class="mission-section animate-fade-in">
         <div class="container">
             <div class="mission-grid">
                 <div class="mission-content">

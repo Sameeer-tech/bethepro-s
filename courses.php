@@ -9,7 +9,7 @@ session_start();
     <title>Our Courses - BeThePro's</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/courses.css">
-
+    <link rel="stylesheet" href="css/animations.css">
 </head>
 
 <style>
@@ -68,18 +68,95 @@ include 'assets/header.php';
                 // Load courses from database
                 include 'config/database.php';
                 
+                $coursesDisplayed = false;
+                
                 try {
                     $stmt = $pdo->query("SELECT * FROM courses WHERE status = 'Active' ORDER BY created_at DESC");
                     $courses = $stmt->fetchAll();
                     
-                    foreach ($courses as $course) {
-                        // Convert features string to array
-                        $features = explode(',', $course['features']);
-                        
-                        // Get category from level
+                    if (!empty($courses)) {
+                        foreach ($courses as $course) {
+                            // Convert features string to array
+                            $features = explode(',', $course['features']);
+                            
+                            // Get category from level
+                            $category = strtolower($course['level']);
+                            
+                            echo '<div class="course-card animate-fade-in" data-category="' . $category . '">';
+                            echo '<div class="course-badge" data-type="' . $category . '">' . htmlspecialchars($course['level']) . '</div>';
+                            echo '<div class="course-image" style="background-image: url(\'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80\');"></div>';
+                            echo '<div class="course-content">';
+                            echo '<h3>' . htmlspecialchars($course['title']) . '</h3>';
+                            echo '<p class="course-description">' . htmlspecialchars($course['description']) . '</p>';
+                            echo '<div class="course-meta">';
+                            echo '<span class="duration">⏱️ ' . htmlspecialchars($course['duration']) . '</span>';
+                            echo '<span class="lessons">📚 24 Lessons</span>';
+                            echo '<span class="level">📊 ' . htmlspecialchars($course['level']) . '</span>';
+                            echo '</div>';
+                            echo '<div class="course-price">';
+                            echo '<span class="price">$' . number_format($course['price'], 0) . '</span>';
+                            echo '<button class="enroll-btn" onclick="checkLoginAndEnroll(\'' . htmlspecialchars($course['title']) . '\', ' . $course['price'] . ', \'' . htmlspecialchars($course['duration']) . '\', \'24 Lessons\')">Enroll Now</button>';
+                            echo '</div>';
+                            echo '</div>';
+                            echo '</div>';
+                        }
+                        $coursesDisplayed = true;
+                    }
+                } catch (PDOException $e) {
+                    // Continue to show sample courses if database fails
+                    error_log("Database error in courses.php: " . $e->getMessage());
+                }
+                
+                // Show sample courses if no database courses found
+                if (!$coursesDisplayed) {
+                    $sampleCourses = [
+                        [
+                            'title' => 'Interview Mastery for Freshers',
+                            'description' => 'Complete interview preparation course designed specifically for fresh graduates and entry-level professionals.',
+                            'level' => 'Beginner',
+                            'duration' => '4 weeks',
+                            'price' => 99
+                        ],
+                        [
+                            'title' => 'Advanced Interview Techniques',
+                            'description' => 'Advanced strategies for experienced professionals targeting senior positions and leadership roles.',
+                            'level' => 'Advanced',
+                            'duration' => '6 weeks',
+                            'price' => 199
+                        ],
+                        [
+                            'title' => 'Technical Interview Prep',
+                            'description' => 'Specialized course for technical interviews including coding challenges and system design.',
+                            'level' => 'Intermediate',
+                            'duration' => '5 weeks',
+                            'price' => 149
+                        ],
+                        [
+                            'title' => 'Communication & Soft Skills',
+                            'description' => 'Master the art of communication, body language, and interpersonal skills for interviews.',
+                            'level' => 'Beginner',
+                            'duration' => '3 weeks',
+                            'price' => 79
+                        ],
+                        [
+                            'title' => 'Executive Interview Coaching',
+                            'description' => 'Premium coaching for C-level and executive positions with personalized guidance.',
+                            'level' => 'Expert',
+                            'duration' => '8 weeks',
+                            'price' => 299
+                        ],
+                        [
+                            'title' => 'Industry-Specific Preparation',
+                            'description' => 'Tailored preparation for specific industries including finance, tech, healthcare, and more.',
+                            'level' => 'Intermediate',
+                            'duration' => '4 weeks',
+                            'price' => 129
+                        ]
+                    ];
+                    
+                    foreach ($sampleCourses as $course) {
                         $category = strtolower($course['level']);
-                        
-                        echo '<div class="course-card" data-category="' . $category . '">';
+                        echo '<div class="course-card animate-fade-in" data-category="' . $category . '">';
                         echo '<div class="course-badge" data-type="' . $category . '">' . htmlspecialchars($course['level']) . '</div>';
                         echo '<div class="course-image" style="background-image: url(\'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80\');"></div>';
                         echo '<div class="course-content">';
@@ -97,13 +174,6 @@ include 'assets/header.php';
                         echo '</div>';
                         echo '</div>';
                     }
-                    
-                    if (empty($courses)) {
-                        echo '<p style="text-align: center; grid-column: 1/-1; padding: 40px;">No courses available at the moment.</p>';
-                    }
-                    
-                } catch (PDOException $e) {
-                    echo '<p style="text-align: center; grid-column: 1/-1; padding: 40px;">Error loading courses: ' . $e->getMessage() . '</p>';
                 }
                 ?>
             </div>
@@ -294,5 +364,6 @@ function checkLoginAndEnroll(courseName, price, duration, lessons) {
 
 <script src="js/script.js"></script>
 <script src="js/courses.js"></script>
+<script src="js/scroll-animations.js"></script>
 </body>
 </html>
