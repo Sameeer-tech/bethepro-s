@@ -21,12 +21,98 @@ include "assets/loader.php";
 include 'assets/header.php';
 ?>
 
+<!-- Hero Banner Section -->
+<section class="preparation-banner">
+    <div class="banner-container">
+        <div class="banner-content">
+            <div class="banner-text">
+                <div class="banner-badge">
+                    <i class="fas fa-star"></i>
+                    <span>Professional Interview Preparation</span>
+                </div>
+                <h1 class="banner-title">
+                    Master Your <span class="highlight">Interview Skills</span>
+                    <br>Land Your Dream Job
+                </h1>
+                <p class="banner-description">
+                    Comprehensive preparation resources, practice questions, and expert guidance 
+                    to help you succeed in technical interviews across multiple domains.
+                </p>
+                <div class="banner-stats">
+                    <div class="stat-item">
+                        <div class="stat-number">1000+</div>
+                        <div class="stat-label">Practice Questions</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">6</div>
+                        <div class="stat-label">Career Domains</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">95%</div>
+                        <div class="stat-label">Success Rate</div>
+                    </div>
+                </div>
+                <div class="banner-cta">
+                    <button class="btn-primary" onclick="document.querySelector('.preparation-sidebar').scrollIntoView({behavior: 'smooth'})">
+                        <i class="fas fa-rocket"></i>
+                        Start Preparing Now
+                    </button>
+                    <button class="btn-secondary" onclick="window.location.href='courses.php'">
+                        <i class="fas fa-play-circle"></i>
+                        View Courses
+                    </button>
+                </div>
+            </div>
+            <div class="banner-visual">
+                <div class="visual-container">
+                    <div class="floating-cards">
+                        <div class="card card-1">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Data Analytics</span>
+                        </div>
+                        <div class="card card-2">
+                            <i class="fas fa-code"></i>
+                            <span>Web Development</span>
+                        </div>
+                        <div class="card card-3">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Sales & Marketing</span>
+                        </div>
+                        <div class="card card-4">
+                            <i class="fas fa-user-friends"></i>
+                            <span>HR & Recruitment</span>
+                        </div>
+                        <div class="card card-5">
+                            <i class="fas fa-calculator"></i>
+                            <span>Finance</span>
+                        </div>
+                        <div class="card card-6">
+                            <i class="fas fa-tasks"></i>
+                            <span>Project Management</span>
+                        </div>
+                    </div>
+                    <div class="central-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="banner-background">
+        <div class="bg-shape shape-1"></div>
+        <div class="bg-shape shape-2"></div>
+        <div class="bg-shape shape-3"></div>
+    </div>
+</section>
+
 <!-- Main Preparation Content -->
 <main class="preparation-main">
     <div class="container">
         <div class="preparation-container">
-            <!-- Sidebar Navigation -->
-            <aside class="preparation-sidebar">
+            <!-- Sidebar Container -->
+            <div class="sidebar-container">
+                <!-- Sidebar Navigation -->
+                <aside class="preparation-sidebar">
                 <div class="sidebar-header">
                     <h2><i class="fas fa-graduation-cap"></i> Interview Prep Hub</h2>
                     <p>Master your skills for career success</p>
@@ -240,6 +326,49 @@ include 'assets/header.php';
                     </div>
                 </nav>
             </aside>
+
+            <!-- Course Promotion Sidebar -->
+            <aside class="course-promotion-sidebar">
+                <div class="sidebar-header">
+                    <h3><i class="fas fa-graduation-cap"></i> Take Your Preparation Further</h3>
+                </div>
+                <div class="sidebar-content">
+                    <p>We also offer courses. If you want to prepare with live experience, you can purchase our courses to practice with real-time mock interviews and improve your preparation even further.</p>
+                    <a href="courses.php" class="btn-courses">
+                        <i class="fas fa-arrow-right"></i>
+                        Explore Our Courses
+                    </a>
+                </div>
+            </aside>
+
+            <!-- Quiz Section Sidebar -->
+            <aside class="quiz-section-sidebar">
+                <div class="sidebar-header">
+                    <h3><i class="fas fa-brain"></i> Test Your Knowledge</h3>
+                </div>
+                <div class="sidebar-content">
+                    <p>Ready to put your preparation to the test? Take our comprehensive quizzes designed to simulate real interview scenarios. Get instant feedback, track your progress, and identify areas for improvement.</p>
+                    <div class="quiz-features">
+                        <div class="feature-item">
+                            <i class="fas fa-clock"></i>
+                            <span>Timed Practice Tests</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Performance Analytics</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fas fa-trophy"></i>
+                            <span>Skill Assessment</span>
+                        </div>
+                    </div>
+                    <a href="quiz/main.php" class="btn-quiz">
+                        <i class="fas fa-play"></i>
+                        Start Quiz Now
+                    </a>
+                </div>
+            </aside>
+            </div>
 
             <!-- Main Content Area -->
             <section class="preparation-content">
@@ -2337,6 +2466,7 @@ include 'assets/header.php';
 </main>
 
 <?php
+include 'assets/stats.php';
 include 'assets/footer.php';
 ?>
 

@@ -9,6 +9,7 @@ session_start();
     <title>BeThePro's - Master Your Interview Success</title>
     <link rel="stylesheet" href="css/style.css"/>
     <link rel="stylesheet" href="css/animations.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" integrity="sha512-c42qTSw/wPZ3/5LBzD+Bw5f7bSF2oxou6wEb+I/lqeaKV5FDIfMvvRp772y4jcJLKuGUOpbJMdg/BTl50fJYAw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
  
     <style>
@@ -60,19 +61,73 @@ if(isset($_SESSION['login_success'])): ?>
 <?php endif; ?>
    
 
-    <!-- Hero Section -->
+    <!-- Enhanced Hero Section -->
     <section class="hero animate-fade-in" id="home">
+      <div class="hero-background">
+        <div class="bg-particles">
+          <div class="particle particle-1"></div>
+          <div class="particle particle-2"></div>
+          <div class="particle particle-3"></div>
+          <div class="particle particle-4"></div>
+          <div class="particle particle-5"></div>
+        </div>
+      </div>
       <div class="container">
         <div class="hero-content animate-slide-up">
-          <h1 id="animation">Master Your Interview Success</h1>
+          <div class="hero-badge">
+            <i class="fas fa-star"></i>
+            <span>Professional Interview Mastery</span>
+          </div>
+          <h1 id="animation">
+            Master Your <span class="text-highlight">Interview Success</span>
+          </h1>
           <p>
             Comprehensive interview preparation for freshers, mid-level
             professionals, and experts. Build confidence, improve communication,
-            and land your dream job.
+            and land your dream job with our proven methodology.
           </p>
+          <div class="hero-stats">
+            <div class="stat-item">
+              <div class="stat-number">500+</div>
+              <div class="stat-label">Success Stories</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">6</div>
+              <div class="stat-label">Career Domains</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">24/7</div>
+              <div class="stat-label">Support</div>
+            </div>
+          </div>
           <div class="hero-buttons animate-scale-in">
-            <a href="#features" class="primary-btn">Start Learning</a>
-            <a href="courses.php" class="secondary-btn">View Courses</a>
+            <a href="#features" class="primary-btn">
+              <i class="fas fa-rocket"></i>
+              Start Learning
+            </a>
+            <a href="courses.php" class="secondary-btn">
+              <i class="fas fa-graduation-cap"></i>
+              View Courses
+            </a>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <div class="hero-image-container">
+            <div class="floating-icon icon-1">
+              <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="floating-icon icon-2">
+              <i class="fas fa-lightbulb"></i>
+            </div>
+            <div class="floating-icon icon-3">
+              <i class="fas fa-trophy"></i>
+            </div>
+            <div class="floating-icon icon-4">
+              <i class="fas fa-users"></i>
+            </div>
+            <div class="main-visual-element">
+              <i class="fas fa-brain"></i>
+            </div>
           </div>
         </div>
       </div>
@@ -198,7 +253,7 @@ if(isset($_SESSION['login_success'])): ?>
           Join thousands of professionals who have successfully landed their
           dream jobs with our expert guidance.
         </p>
-        <a href="#signup" class="primary-btn animate-scale-in">Start Your Journey Today</a>
+        <a href="signup.php" class="primary-btn animate-scale-in">Start Your Journey Today</a>
       </div>
     </section>
 

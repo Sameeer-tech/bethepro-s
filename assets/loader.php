@@ -28,6 +28,8 @@
     font-size: 2rem;
     font-weight: bold;
     margin-top: 2rem;
+    text-transform: none !important;
+    letter-spacing: normal !important;
 }
 
 .loader-subtext {
