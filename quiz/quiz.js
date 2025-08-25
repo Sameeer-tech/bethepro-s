@@ -358,83 +358,210 @@ function initializeQuizCategories() {
 // Start Quiz Function
 function startQuiz(key) {
   const cat = quizCategories.find(c => c.key === key);
-  if (!cat) return;
+  if (!cat) {
+    console.error('Quiz category not found:', key);
+    return;
+  }
   
-  currentLevel = document.getElementById('levelSelect') ? document.getElementById('levelSelect').value : 'junior';
+  // Get current level from select dropdown
+  const levelSelect = document.getElementById('levelSelect');
+  currentLevel = levelSelect ? levelSelect.value : 'junior';
+  
+  console.log('Starting quiz:', key, 'Level:', currentLevel);
+  
   currentQuiz = cat.quiz[currentLevel];
+  if (!currentQuiz) {
+    console.error('Quiz data not found for level:', currentLevel);
+    return;
+  }
+  
   currentQ = 0;
   userAnswers = [];
   wrongAnswers = [];
   
-  document.getElementById('quizTitle').textContent = currentQuiz.title;
-  document.getElementById('quizResult').textContent = '';
-  document.getElementById('quizQuestions').innerHTML = '';
-  document.getElementById('quizModal').classList.remove('d-none');
-  document.getElementById('levelSelect').value = currentLevel;
+  // Show modal first
+  const modal = document.getElementById('quizModal');
+  modal.classList.remove('d-none');
   
+  // Set title and clear previous content
+  document.getElementById('quizTitle').textContent = currentQuiz.title;
+  document.getElementById('quizResult').innerHTML = '';
+  document.getElementById('quizQuestions').innerHTML = '';
+  
+  // Update level select to current level
+  if (levelSelect) {
+    levelSelect.value = currentLevel;
+  }
+  
+  console.log('Quiz initialized, showing first question');
   showQuestion();
 }
 
 // Level Select Event Listener
 function initializeLevelSelect() {
-  document.getElementById('levelSelect').addEventListener('change', function() {
+  const levelSelect = document.getElementById('levelSelect');
+  if (!levelSelect) {
+    console.error('Level select element not found');
+    return;
+  }
+  
+  levelSelect.addEventListener('change', function() {
+    console.log('Level changed to:', this.value);
+    
     if (currentQuiz) {
+      const oldLevel = currentLevel;
       currentLevel = this.value;
-      const cat = quizCategories.find(c => c.quiz[currentLevel]);
-      if (cat) {
-        currentQuiz = cat.quiz[currentLevel];
+      
+      // Find the current category
+      const currentCat = quizCategories.find(c => Object.keys(c.quiz).includes(oldLevel));
+      if (currentCat && currentCat.quiz[currentLevel]) {
+        currentQuiz = currentCat.quiz[currentLevel];
         currentQ = 0;
         userAnswers = [];
         wrongAnswers = [];
+        
         document.getElementById('quizTitle').textContent = currentQuiz.title;
-        document.getElementById('quizResult').textContent = '';
+        document.getElementById('quizResult').innerHTML = '';
+        
+        console.log('Restarting quiz with new level');
         showQuestion();
       }
     }
   });
+  
+  console.log('Level select initialized');
 }
 
 // Show Question Function
 function showQuestion() {
+  console.log('showQuestion called, currentQ:', currentQ);
+  console.log('currentQuiz:', currentQuiz);
+  
+  if (!currentQuiz || !currentQuiz.questions) {
+    console.error('No quiz data available');
+    return;
+  }
+  
   const q = currentQuiz.questions[currentQ];
-  if (!q) return;
+  if (!q) {
+    console.error('Question not found at index:', currentQ);
+    return;
+  }
   
-  document.getElementById('quizProgress').innerHTML = `<div class='progress'><div class='progress-bar' role='progressbar' style='width:${((currentQ+1)/currentQuiz.questions.length)*100}%;background:${getCategoryColor()}'></div></div>`;
+  console.log('Showing question:', currentQ + 1, q.q);
+  console.log('Question options:', q.options);
   
-  document.getElementById('quizQuestions').innerHTML = `
-    <div class='mb-3 animate-fade-in'><strong>Q${currentQ+1}:</strong> ${q.q}</div>
-    <div id='options' class='animate-slide-up'></div>
-  `;
+  // Update progress bar
+  const progressElement = document.getElementById('quizProgress');
+  if (progressElement) {
+    const progressPercentage = ((currentQ + 1) / currentQuiz.questions.length) * 100;
+    progressElement.innerHTML = `
+      <div class='progress' style='height: 10px; background-color: #e9ecef; border-radius: 5px; overflow: hidden;'>
+        <div class='progress-bar' role='progressbar' 
+             style='width: ${progressPercentage}%; background: ${getCategoryColor()}; transition: width 0.3s ease;'>
+        </div>
+      </div>
+    `;
+  }
   
-  const optionsDiv = document.getElementById('options');
-  q.options.forEach((opt, idx) => {
-    const btn = document.createElement('button');
-    btn.className = 'btn btn-outline-primary option-btn w-100 animate-scale-in';
-    btn.style.animationDelay = `${idx * 0.1}s`;
-    btn.textContent = opt;
-    btn.onclick = () => selectOption(idx);
-    optionsDiv.appendChild(btn);
-  });
+  // Update question content
+  const questionsElement = document.getElementById('quizQuestions');
+  if (questionsElement) {
+    questionsElement.innerHTML = `
+      <div class='mb-4'>
+        <h5 class='mb-3'><strong>Question ${currentQ + 1} of ${currentQuiz.questions.length}</strong></h5>
+        <p class='fs-6 mb-4'>${q.q}</p>
+        <div id='options'></div>
+      </div>
+    `;
+    
+    // Add options with a small delay to ensure DOM is ready
+    setTimeout(() => {
+      const optionsDiv = document.getElementById('options');
+      if (optionsDiv && q.options) {
+        console.log('Adding options to DOM');
+        optionsDiv.innerHTML = ''; // Clear existing options
+        
+        q.options.forEach((opt, idx) => {
+          const btn = document.createElement('button');
+          btn.className = 'btn btn-outline-primary option-btn w-100 mb-2';
+          btn.style.padding = '12px 16px';
+          btn.style.textAlign = 'left';
+          btn.style.border = '2px solid #e9ecef';
+          btn.style.borderRadius = '8px';
+          btn.style.transition = 'all 0.3s ease';
+          btn.textContent = opt;
+          btn.onclick = () => selectOption(idx);
+          
+          // Add hover effect
+          btn.onmouseover = function() {
+            if (!this.classList.contains('active')) {
+              this.style.borderColor = '#007bff';
+              this.style.backgroundColor = '#f8f9fa';
+            }
+          };
+          
+          btn.onmouseout = function() {
+            if (!this.classList.contains('active')) {
+              this.style.borderColor = '#e9ecef';
+              this.style.backgroundColor = '#fff';
+            }
+          };
+          
+          optionsDiv.appendChild(btn);
+          console.log('Added option:', opt);
+        });
+      } else {
+        console.error('Options div not found or no options available');
+      }
+    }, 50);
+  }
   
-  document.getElementById('nextBtn').classList.add('d-none');
-  document.getElementById('submitBtn').classList.add('d-none');
+  // Hide next/submit buttons initially
+  const nextBtn = document.getElementById('nextBtn');
+  const submitBtn = document.getElementById('submitBtn');
+  if (nextBtn) nextBtn.classList.add('d-none');
+  if (submitBtn) submitBtn.classList.add('d-none');
+  
+  console.log('Question display setup complete');
 }
 
 // Select Option Function
 function selectOption(idx) {
+  console.log('Option selected:', idx);
   userAnswers[currentQ] = idx;
   
-  Array.from(document.getElementsByClassName('option-btn')).forEach((btn, i) => {
-    btn.classList.toggle('active', i === idx);
-    btn.classList.toggle('btn-primary', i === idx);
-    btn.classList.toggle('btn-outline-primary', i !== idx);
+  // Update button styles
+  const optionButtons = document.getElementsByClassName('option-btn');
+  Array.from(optionButtons).forEach((btn, i) => {
+    if (i === idx) {
+      // Selected button
+      btn.classList.add('active');
+      btn.style.backgroundColor = '#007bff';
+      btn.style.borderColor = '#007bff';
+      btn.style.color = '#fff';
+    } else {
+      // Unselected buttons
+      btn.classList.remove('active');
+      btn.style.backgroundColor = '#fff';
+      btn.style.borderColor = '#e9ecef';
+      btn.style.color = '#495057';
+    }
   });
   
+  // Show appropriate next/submit button
+  const nextBtn = document.getElementById('nextBtn');
+  const submitBtn = document.getElementById('submitBtn');
+  
   if (currentQ < currentQuiz.questions.length - 1) {
-    document.getElementById('nextBtn').classList.remove('d-none');
+    if (nextBtn) nextBtn.classList.remove('d-none');
+    if (submitBtn) submitBtn.classList.add('d-none');
   } else {
-    document.getElementById('submitBtn').classList.remove('d-none');
+    if (nextBtn) nextBtn.classList.add('d-none');
+    if (submitBtn) submitBtn.classList.remove('d-none');
   }
+  
+  console.log('Option selection complete, answer recorded:', idx);
 }
 
 // Next Question Function
@@ -445,6 +572,10 @@ function nextQuestion() {
 
 // Submit Quiz Function
 function submitQuiz() {
+  console.log('Submit quiz called');
+  console.log('User answers:', userAnswers);
+  console.log('Quiz questions:', currentQuiz.questions);
+  
   let score = 0;
   wrongAnswers = []; // Reset wrong answers array
   
@@ -465,35 +596,44 @@ function submitQuiz() {
   const totalQuestions = currentQuiz.questions.length;
   const percentage = Math.round((score / totalQuestions) * 100);
   
+  console.log('Quiz completed - Score:', score, 'Total:', totalQuestions, 'Percentage:', percentage);
+  
   let resultMessage = '';
-  let resultClass = '';
   let resultColor = '';
   
   if (percentage >= 80) {
     resultMessage = 'Excellent! You have strong knowledge in this area.';
-    resultClass = 'success';
     resultColor = '#28a745';
   } else if (percentage >= 60) {
     resultMessage = 'Good job! You have decent knowledge, but there\'s room for improvement.';
-    resultClass = 'warning';
     resultColor = '#ffc107';
   } else {
     resultMessage = 'Keep studying! You need to improve your knowledge in this area.';
-    resultClass = 'danger';
     resultColor = '#dc3545';
   }
 
-  // Create the main result display
+  // Create a simpler, more reliable result display
   let resultHtml = `
-    <div class="quiz-result-header">
-      <div class="score-display" style="color: ${resultColor};">
+    <div style="background: white; padding: 30px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); text-align: center;">
+      <div style="font-size: 2.5rem; font-weight: 700; margin-bottom: 10px; color: ${resultColor};">
         ${score}/${totalQuestions}
       </div>
-      <div class="score-percentage" style="color: ${resultColor};">
+      <div style="font-size: 1.5rem; margin-bottom: 15px; color: ${resultColor};">
         ${percentage}%
       </div>
-      <div class="score-message" style="color: ${resultColor === '#ffc107' ? '#856404' : resultColor === '#dc3545' ? '#721c24' : resultColor};">
+      <div style="font-size: 1.1rem; margin-bottom: 20px; color: #333;">
         ${resultMessage}
+      </div>
+      
+      <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+        <button onclick="restartQuiz()" 
+                style="background: #007bff; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 1rem;">
+          🔄 Retake Quiz
+        </button>
+        <button onclick="closeQuizModal()" 
+                style="background: #6c757d; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 1rem;">
+          📚 Choose Another Quiz
+        </button>
       </div>
     </div>
   `;
@@ -501,30 +641,27 @@ function submitQuiz() {
   // Add wrong answers review section if there are mistakes
   if (wrongAnswers.length > 0) {
     resultHtml += `
-      <div class="wrong-answers-review" id="wrongAnswersReview">
-        <div class="review-header">
-          <h5 class="review-title">
-            📚 Review Your Mistakes (${wrongAnswers.length})
-          </h5>
-          <button class="review-close-btn" onclick="hideWrongAnswers()" title="Hide review">
-            ×
-          </button>
-        </div>
-        <div class="wrong-answers-container">
+      <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+        <h5 style="color: #dc3545; margin-bottom: 20px; font-size: 1.2rem;">
+          📚 Review Your Mistakes (${wrongAnswers.length})
+        </h5>
+        <div style="max-height: 400px; overflow-y: auto;">
           ${wrongAnswers.map(item => `
-            <div class="wrong-answer-card">
-              <div class="question-number">
+            <div style="border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: #f8f9fa;">
+              <div style="font-weight: 600; color: #dc3545; margin-bottom: 10px;">
                 ❌ Question ${item.questionNumber}
               </div>
-              <div class="question-text">${item.question}</div>
-              <div class="answer-comparison">
-                <div class="user-answer">
-                  <div class="answer-label">Your Answer:</div>
-                  <div class="answer-text">${item.userAnswer}</div>
+              <div style="margin-bottom: 15px; font-size: 1rem; color: #333;">
+                ${item.question}
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div style="padding: 10px; border-radius: 6px; background: #f8d7da; border-left: 4px solid #dc3545;">
+                  <div style="font-weight: 600; color: #721c24; margin-bottom: 5px;">Your Answer:</div>
+                  <div style="color: #721c24;">${item.userAnswer}</div>
                 </div>
-                <div class="correct-answer">
-                  <div class="answer-label">Correct Answer:</div>
-                  <div class="answer-text">${item.correctAnswer}</div>
+                <div style="padding: 10px; border-radius: 6px; background: #d4edda; border-left: 4px solid #28a745;">
+                  <div style="font-weight: 600; color: #155724; margin-bottom: 5px;">Correct Answer:</div>
+                  <div style="color: #155724;">${item.correctAnswer}</div>
                 </div>
               </div>
             </div>
@@ -534,46 +671,66 @@ function submitQuiz() {
     `;
   } else {
     resultHtml += `
-      <div class="wrong-answers-review" style="background: linear-gradient(135deg, #28a745, #20c997); color: white; text-align: center;">
-        <div style="padding: 30px;">
-          <h4 style="margin-bottom: 15px; color: white;">🎉 Perfect Score!</h4>
-          <p style="margin: 0; font-size: 1.1rem;">You answered all questions correctly! Excellent work!</p>
-        </div>
+      <div style="background: linear-gradient(135deg, #28a745, #20c997); color: white; text-align: center; border-radius: 12px; padding: 30px; margin-bottom: 20px;">
+        <h4 style="margin-bottom: 15px; color: white;">🎉 Perfect Score!</h4>
+        <p style="margin: 0; font-size: 1.1rem;">You answered all questions correctly! Excellent work!</p>
       </div>
     `;
   }
 
-  // Add action buttons
-  resultHtml += `
-    <div style="text-align: center; margin-top: 30px; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
-      <button class="btn btn-primary me-3" onclick="restartQuiz()" style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); border: none; padding: 12px 24px; border-radius: 8px;">
-        🔄 Retake Quiz
-      </button>
-      <button class="btn btn-outline-secondary" onclick="closeQuizModal()" style="padding: 12px 24px; border-radius: 8px;">
-        📚 Choose Another Quiz
-      </button>
-      ${wrongAnswers.length > 0 ? `
-        <button class="btn btn-outline-info" onclick="showWrongAnswers()" id="showReviewBtn" style="padding: 12px 24px; border-radius: 8px; margin-left: 10px; display: none;">
-          👀 Show Review
-        </button>
-      ` : ''}
-    </div>
-  `;
-
-  // Clear question content and show results
-  document.getElementById('quizQuestions').innerHTML = '';
-  document.getElementById('quizProgress').innerHTML = '';
-  document.getElementById('nextBtn').classList.add('d-none');
-  document.getElementById('submitBtn').classList.add('d-none');
+  console.log('Displaying results...');
   
-  // Add animation to result display
+  // Clear question content and show results
+  const questionsElement = document.getElementById('quizQuestions');
+  const progressElement = document.getElementById('quizProgress');
+  const nextBtn = document.getElementById('nextBtn');
+  const submitBtn = document.getElementById('submitBtn');
   const resultContainer = document.getElementById('quizResult');
-  resultContainer.innerHTML = `<div class="animate-fade-in">${resultHtml}</div>`;
+  
+  if (questionsElement) questionsElement.innerHTML = '';
+  if (progressElement) progressElement.innerHTML = '';
+  if (nextBtn) nextBtn.classList.add('d-none');
+  if (submitBtn) submitBtn.classList.add('d-none');
+  
+  if (resultContainer) {
+    resultContainer.innerHTML = resultHtml;
+    console.log('Results displayed successfully');
+  } else {
+    console.error('Result container not found');
+  }
 }
 
 // Close Quiz Modal
 function closeQuizModal() {
-  document.getElementById('quizModal').classList.add('d-none');
+  console.log('Closing quiz modal...');
+  const modal = document.getElementById('quizModal');
+  if (modal) {
+    modal.classList.add('d-none');
+  }
+  
+  // Reset quiz state
+  currentQ = 0;
+  userAnswers = [];
+  wrongAnswers = [];
+  currentQuiz = null;
+  
+  // Clear all content
+  const elements = ['quizQuestions', 'quizProgress', 'quizResult', 'quizTitle'];
+  elements.forEach(id => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.innerHTML = '';
+    }
+  });
+  
+  // Hide buttons
+  const buttons = ['nextBtn', 'submitBtn'];
+  buttons.forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) {
+      btn.classList.add('d-none');
+    }
+  });
 }
 
 // Hide Wrong Answers
@@ -604,10 +761,18 @@ function showWrongAnswers() {
 
 // Restart Quiz
 function restartQuiz() {
+  console.log('Restarting quiz...');
   currentQ = 0;
   userAnswers = [];
   wrongAnswers = [];
-  document.getElementById('quizResult').textContent = '';
+  
+  // Clear results
+  const resultContainer = document.getElementById('quizResult');
+  if (resultContainer) {
+    resultContainer.innerHTML = '';
+  }
+  
+  // Show first question
   showQuestion();
 }
 
@@ -629,12 +794,50 @@ function toggleMistake(index) {
 
 // Get Category Color
 function getCategoryColor() {
-  const cat = quizCategories.find(c => c.quiz[currentLevel]);
-  return cat ? cat.color : '#667eea';
+  // Find the category that has the current level in its quiz object
+  let categoryColor = '#667eea'; // default color
+  
+  for (const cat of quizCategories) {
+    if (cat.quiz && cat.quiz[currentLevel]) {
+      categoryColor = cat.color;
+      break;
+    }
+  }
+  
+  return categoryColor;
 }
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOM loaded, initializing quiz...');
+  
+  // Check if required elements exist
+  const categoryCards = document.getElementById('categoryCards');
+  const levelSelect = document.getElementById('levelSelect');
+  const quizModal = document.getElementById('quizModal');
+  
+  if (!categoryCards) {
+    console.error('categoryCards element not found');
+    return;
+  }
+  
+  if (!levelSelect) {
+    console.error('levelSelect element not found');
+    return;
+  }
+  
+  if (!quizModal) {
+    console.error('quizModal element not found');
+    return;
+  }
+  
+  console.log('All required elements found, initializing...');
+  
+  // Initialize quiz categories
   initializeQuizCategories();
+  
+  // Initialize level select
   initializeLevelSelect();
+  
+  console.log('Quiz initialization complete');
 });
