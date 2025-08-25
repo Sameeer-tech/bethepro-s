@@ -2,6 +2,10 @@
 if(!isset($_SESSION)) {
     session_start();
 }
+
+// Detect if we're in a subdirectory
+$isSubdir = (basename(dirname($_SERVER['SCRIPT_NAME'])) !== 'bethepros-website-main');
+$basePath = $isSubdir ? '../' : '';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -9,7 +13,7 @@ if(!isset($_SESSION)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="<?php echo $basePath; ?>css/animations.css">
 </head>
 <body>
 <style>
@@ -107,6 +111,15 @@ nav {
 
 .nav-links a:hover::after {
     width: 100%;
+}
+
+.nav-links a.active {
+    color: #ffd700;
+}
+
+.nav-links a.active::after {
+    width: 100%;
+    background-color: #ffd700;
 }
 
 /* Mobile Menu Button */
@@ -220,6 +233,10 @@ nav {
     nav {
         padding: 0 20px;
         position: relative;
+    }
+    
+    .container {
+        padding: 0;
     }
     
     .logo {
@@ -348,6 +365,19 @@ nav {
         font-size: 0.65rem;
     }
 }
+
+/* Container styling */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+@media (max-width: 1200px) {
+    .container {
+        padding: 0 20px;
+    }
+}
 </style>
 
 
@@ -363,23 +393,23 @@ nav {
         </button>
         
         <ul class="nav-links" id="navLinks">
-          <li><a href="/bethepros-website(main)/index.php">Home</a></li>
-          <li><a href="/bethepros-website(main)/preparation.php">Preparation</a></li>
-          <li><a href="/bethepros-website(main)/courses.php">Courses</a></li>
-          <li><a href="#testimonials">Success Stories</a></li>
-          <li><a href="/bethepros-website(main)/quiz/main.php">Quiz</a></li>
-          <li><a href="/bethepros-website(main)/contact.php">Contact</a></li>
-          <li><a href="/bethepros-website(main)/about.php">About Us</a></li>
+          <li><a href="<?php echo $basePath; ?>index.php">Home</a></li>
+          <li><a href="<?php echo $basePath; ?>preparation.php">Preparation</a></li>
+          <li><a href="<?php echo $basePath; ?>courses.php">Courses</a></li>
+          <li><a href="<?php echo $basePath; ?>index.php#testimonials">Success Stories</a></li>
+          <li><a href="<?php echo $basePath; ?>quiz/main.php">Quiz</a></li>
+          <li><a href="<?php echo $basePath; ?>contact.php">Contact</a></li>
+          <li><a href="<?php echo $basePath; ?>About.php">About Us</a></li>
         </ul>
         <?php if(isset($_SESSION['user_id'])): ?>
             <div class="user-menu">
                 <span class="username">Welcome, <?php echo htmlspecialchars($_SESSION['user_fullname']); ?></span>
-                <a href="logout.php" class="logout-btn">Logout</a>
+                <a href="<?php echo $basePath; ?>logout.php" class="logout-btn">Logout</a>
             </div>
         <?php else: ?>
             <div class="auth-buttons">
-                <a href="login.php" class="cta-btn login">Login</a>
-                <a href="signup.php" class="cta-btn signup">Sign Up</a>
+                <a href="<?php echo $basePath; ?>login.php" class="cta-btn login">Login</a>
+                <a href="<?php echo $basePath; ?>signup.php" class="cta-btn signup">Sign Up</a>
             </div>
         <?php endif; ?>
       </nav>
@@ -390,6 +420,19 @@ nav {
 document.addEventListener('DOMContentLoaded', function() {
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const navLinks = document.getElementById('navLinks');
+    
+    // Highlight current page
+    const currentPage = window.location.pathname.split('/').pop();
+    const navLinksItems = navLinks.querySelectorAll('a');
+    
+    navLinksItems.forEach(link => {
+        const linkPage = link.getAttribute('href').split('/').pop().split('#')[0];
+        if (linkPage === currentPage || 
+            (currentPage === '' && linkPage === 'index.php') ||
+            (currentPage === 'index.php' && linkPage === 'index.php')) {
+            link.classList.add('active');
+        }
+    });
     
     if (mobileMenuBtn && navLinks) {
         mobileMenuBtn.addEventListener('click', function() {
@@ -405,7 +448,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         // Close menu when clicking on a nav link
-        const navLinksItems = navLinks.querySelectorAll('a');
         navLinksItems.forEach(link => {
             link.addEventListener('click', function() {
                 navLinks.classList.remove('active');
