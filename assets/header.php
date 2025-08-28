@@ -27,7 +27,7 @@ $basePath = $isSubdir ? '../' : '';
         display: none !important;
     }
         .mobile-dropdown {
-            display: flex;
+            display: flex !important;
             flex-direction: column;
             position: fixed;
             top: 60px;
@@ -300,7 +300,10 @@ nav {
     }
     
     .mobile-menu-btn {
-        display: flex;
+        display: flex !important;
+        position: relative;
+        z-index: 1200;
+        cursor: pointer;
     }
     
     .nav-links {
@@ -503,7 +506,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Mobile dropdown logic
     if (mobileMenuBtn && mobileDropdown) {
+        console.log('Mobile menu elements found'); // Debug log
         mobileMenuBtn.addEventListener('click', function(e) {
+            console.log('Hamburger clicked'); // Debug log
             e.stopPropagation();
             mobileDropdown.classList.toggle('active');
             if (mobileDropdown.classList.contains('active')) {
