@@ -4,7 +4,7 @@ if(!isset($_SESSION)) {
 }
 
 // Detect if we're in a subdirectory
-$isSubdir = (basename(dirname($_SERVER['SCRIPT_NAME'])) !== 'bethepros-website-main');
+$isSubdir = (basename(dirname($_SERVER['SCRIPT_NAME'])) !== 'bethepro-s');
 $basePath = $isSubdir ? '../' : '';
 ?>
 <!DOCTYPE html>
@@ -17,6 +17,62 @@ $basePath = $isSubdir ? '../' : '';
 </head>
 <body>
 <style>
+/* Hide mobile dropdown on desktop by default */
+.mobile-dropdown {
+    display: none !important;
+}
+
+@media (max-width: 768px) {
+    .nav-links {
+        display: none !important;
+    }
+        .mobile-dropdown {
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 60px;
+            left: 0;
+            width: 100vw;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: 1100;
+            padding: 30px 0 0 0;
+            margin: 0;
+            list-style: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(-20px);
+            transition: opacity 0.3s cubic-bezier(.4,0,.2,1), transform 0.3s cubic-bezier(.4,0,.2,1);
+        }
+        .mobile-dropdown.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+        .mobile-dropdown li {
+            margin: 12px 0;
+            text-align: center;
+            transition: background 0.2s;
+        }
+        .mobile-dropdown a {
+            color: #fff;
+            font-size: 1.15rem;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            display: block;
+            transition: background 0.2s, color 0.2s;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+        }
+        .mobile-dropdown a:hover {
+            background: rgba(255,255,255,0.12);
+            color: #ffd700;
+        }
+    .mobile-menu-btn {
+        z-index: 1200;
+    }
+}
         /* CSS Variables */
         :root {
             --primary-color: #667eea;
@@ -392,15 +448,27 @@ nav {
             <span></span>
         </button>
         
-        <ul class="nav-links" id="navLinks">
-          <li><a href="<?php echo $basePath; ?>index.php">Home</a></li>
-          <li><a href="<?php echo $basePath; ?>preparation.php">Preparation</a></li>
-          <li><a href="<?php echo $basePath; ?>courses.php">Courses</a></li>
-          <li><a href="<?php echo $basePath; ?>index.php#testimonials">Success Stories</a></li>
-          <li><a href="<?php echo $basePath; ?>quiz/main.php">Quiz</a></li>
-          <li><a href="<?php echo $basePath; ?>contact.php">Contact</a></li>
-          <li><a href="<?php echo $basePath; ?>About.php">About Us</a></li>
-        </ul>
+                <ul class="nav-links" id="navLinks">
+                    <li><a href="<?php echo $basePath; ?>index.php">Home</a></li>
+                    <li><a href="<?php echo $basePath; ?>preparation.php">Preparation</a></li>
+                    <li><a href="<?php echo $basePath; ?>courses.php">Courses</a></li>
+                    <li><a href="<?php echo $basePath; ?>index.php#testimonials">Success Stories</a></li>
+                    <li><a href="<?php echo $basePath; ?>quiz/main.php">Quiz</a></li>
+                    <li><a href="<?php echo $basePath; ?>contact.php">Contact</a></li>
+                    <li><a href="<?php echo $basePath; ?>About.php">About Us</a></li>
+                </ul>
+                <!-- Mobile Dropdown -->
+                <ul class="mobile-dropdown" id="mobileDropdown">
+                    <li><a href="<?php echo $basePath; ?>index.php">Home</a></li>
+                    <li><a href="<?php echo $basePath; ?>preparation.php">Preparation</a></li>
+                    <li><a href="<?php echo $basePath; ?>courses.php">Courses</a></li>
+                    <li><a href="<?php echo $basePath; ?>index.php#testimonials">Success Stories</a></li>
+                    <li><a href="<?php echo $basePath; ?>quiz/main.php">Quiz</a></li>
+                    <li><a href="<?php echo $basePath; ?>contact.php">Contact</a></li>
+                    <li><a href="<?php echo $basePath; ?>About.php">About Us</a></li>
+                    <li><a href="<?php echo $basePath; ?>login.php">Login</a></li>
+                    <li><a href="<?php echo $basePath; ?>signup.php">Sign Up</a></li>
+                </ul>
         <?php if(isset($_SESSION['user_id'])): ?>
             <div class="user-menu">
                 <span class="username">Welcome, <?php echo htmlspecialchars($_SESSION['user_fullname']); ?></span>
@@ -419,12 +487,11 @@ nav {
 // Mobile Menu Toggle
 document.addEventListener('DOMContentLoaded', function() {
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileDropdown = document.getElementById('mobileDropdown');
     const navLinks = document.getElementById('navLinks');
-    
-    // Highlight current page
+    // Highlight current page for desktop nav
     const currentPage = window.location.pathname.split('/').pop();
     const navLinksItems = navLinks.querySelectorAll('a');
-    
     navLinksItems.forEach(link => {
         const linkPage = link.getAttribute('href').split('/').pop().split('#')[0];
         if (linkPage === currentPage || 
@@ -433,42 +500,42 @@ document.addEventListener('DOMContentLoaded', function() {
             link.classList.add('active');
         }
     });
-    
-    if (mobileMenuBtn && navLinks) {
-        mobileMenuBtn.addEventListener('click', function() {
-            this.classList.toggle('active');
-            navLinks.classList.toggle('active');
-            
-            // Prevent body scrolling when menu is open
-            if (navLinks.classList.contains('active')) {
+
+    // Mobile dropdown logic
+    if (mobileMenuBtn && mobileDropdown) {
+        mobileMenuBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            mobileDropdown.classList.toggle('active');
+            if (mobileDropdown.classList.contains('active')) {
                 document.body.style.overflow = 'hidden';
             } else {
                 document.body.style.overflow = '';
             }
         });
-        
-        // Close menu when clicking on a nav link
-        navLinksItems.forEach(link => {
+        // Close dropdown when clicking a link
+        mobileDropdown.querySelectorAll('a').forEach(link => {
             link.addEventListener('click', function() {
-                navLinks.classList.remove('active');
+                mobileDropdown.classList.remove('active');
                 mobileMenuBtn.classList.remove('active');
                 document.body.style.overflow = '';
             });
         });
-        
-        // Close menu when clicking outside
+        // Close dropdown when clicking outside
         document.addEventListener('click', function(event) {
-            if (!mobileMenuBtn.contains(event.target) && !navLinks.contains(event.target)) {
-                navLinks.classList.remove('active');
+            if (
+                mobileDropdown.classList.contains('active') &&
+                !mobileMenuBtn.contains(event.target) &&
+                !mobileDropdown.contains(event.target)
+            ) {
+                mobileDropdown.classList.remove('active');
                 mobileMenuBtn.classList.remove('active');
                 document.body.style.overflow = '';
             }
         });
-        
         // Handle window resize
         window.addEventListener('resize', function() {
             if (window.innerWidth > 768) {
-                navLinks.classList.remove('active');
+                mobileDropdown.classList.remove('active');
                 mobileMenuBtn.classList.remove('active');
                 document.body.style.overflow = '';
             }
