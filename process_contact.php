@@ -234,12 +234,16 @@ try {
         exit();
     }
     
-    // Insert into database
-    $sql = "INSERT INTO contact_messages (name, email, phone, subject, message, status, created_at) 
-            VALUES (:name, :email, :phone, :subject, :message, 'unread', NOW())";
+    // Get user_id if logged in
+    $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
+    
+    // Insert into database with user_id if available
+    $sql = "INSERT INTO contact_messages (user_id, fullname, email, phone, subject, message, status, created_at) 
+            VALUES (:user_id, :name, :email, :phone, :subject, :message, 'unread', NOW())";
     
     $stmt = $pdo->prepare($sql);
     $result = $stmt->execute([
+        ':user_id' => $user_id,
         ':name' => $name,
         ':email' => $email,
         ':phone' => $phone,

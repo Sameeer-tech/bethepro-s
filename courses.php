@@ -9,7 +9,8 @@ session_start();
     <title>Our Courses - BeThePro's</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/courses.css">
-    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/course-images.css">
+    <link rel="stylesheet" href="css/animations.css">\
 </head>
 
 <style>
@@ -44,10 +45,13 @@ include 'assets/header.php';
 
 ?>
 
-     <!-- Courses Hero Section -->
-     <div class="container1">
-         <img class="my_cover" src="img/img3.png" >
-    </div>
+     <!-- Professional Courses Hero Section -->
+     <div class="courses-hero-bg">
+         <div class="courses-hero-content">
+             <h1>Master Your Professional Skills</h1>
+             <p>Transform your career with our comprehensive training programs designed by industry experts</p>
+         </div>
+     </div>
      
 <body>
     <!-- Course Categories -->
@@ -82,9 +86,24 @@ include 'assets/header.php';
                             // Get category from level
                             $category = strtolower($course['level']);
                             
+                            // Assign professional CSS image class based on title content
+                            $imageClass = 'course-image';
+                            if (stripos($course['title'], 'interview') !== false) {
+                                $imageClass .= ' interview-prep';
+                            } elseif (stripos($course['title'], 'technical') !== false || stripos($course['title'], 'coding') !== false) {
+                                $imageClass .= ' technical';
+                            } elseif (stripos($course['title'], 'communication') !== false || stripos($course['title'], 'soft skills') !== false) {
+                                $imageClass .= ' communication';
+                            } elseif (stripos($course['title'], 'leadership') !== false || stripos($course['title'], 'management') !== false) {
+                                $imageClass .= ' leadership';
+                            } else {
+                                // Fallback based on level
+                                $imageClass .= ' ' . $category;
+                            }
+                            
                             echo '<div class="course-card animate-fade-in" data-category="' . $category . '">';
                             echo '<div class="course-badge" data-type="' . $category . '">' . htmlspecialchars($course['level']) . '</div>';
-                            echo '<div class="course-image" style="background-image: url(\'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80\');"></div>';
+                            echo '<div class="' . $imageClass . '"></div>';
                             echo '<div class="course-content">';
                             echo '<h3>' . htmlspecialchars($course['title']) . '</h3>';
                             echo '<p class="course-description">' . htmlspecialchars($course['description']) . '</p>';
@@ -156,9 +175,25 @@ include 'assets/header.php';
                     
                     foreach ($sampleCourses as $course) {
                         $category = strtolower($course['level']);
+                        
+                        // Assign professional CSS image class based on title content
+                        $imageClass = 'course-image';
+                        if (stripos($course['title'], 'interview') !== false) {
+                            $imageClass .= ' interview-prep';
+                        } elseif (stripos($course['title'], 'technical') !== false || stripos($course['title'], 'coding') !== false) {
+                            $imageClass .= ' technical';
+                        } elseif (stripos($course['title'], 'communication') !== false || stripos($course['title'], 'soft skills') !== false) {
+                            $imageClass .= ' communication';
+                        } elseif (stripos($course['title'], 'leadership') !== false || stripos($course['title'], 'management') !== false || stripos($course['title'], 'executive') !== false) {
+                            $imageClass .= ' leadership';
+                        } else {
+                            // Fallback based on level
+                            $imageClass .= ' ' . $category;
+                        }
+                        
                         echo '<div class="course-card animate-fade-in" data-category="' . $category . '">';
                         echo '<div class="course-badge" data-type="' . $category . '">' . htmlspecialchars($course['level']) . '</div>';
-                        echo '<div class="course-image" style="background-image: url(\'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80\');"></div>';
+                        echo '<div class="' . $imageClass . '"></div>';
                         echo '<div class="course-content">';
                         echo '<h3>' . htmlspecialchars($course['title']) . '</h3>';
                         echo '<p class="course-description">' . htmlspecialchars($course['description']) . '</p>';

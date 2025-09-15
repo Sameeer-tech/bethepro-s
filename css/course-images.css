@@ -1,0 +1,264 @@
+/* Professional Course Images using CSS Gradients */
+
+/* Hero Section Background */
+.courses-hero-bg {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.courses-hero-bg::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+        radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%),
+        radial-gradient(circle at 40% 80%, rgba(255,255,255,0.1) 0%, transparent 50%);
+    animation: float 20s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(2deg); }
+}
+
+.courses-hero-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    padding: 80px 20px;
+    color: white;
+}
+
+.courses-hero-content h1 {
+    font-size: 3rem;
+    font-weight: bold;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.courses-hero-content p {
+    font-size: 1.3rem;
+    opacity: 0.9;
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+/* Course Category Images */
+.course-image {
+    height: 200px;
+    border-radius: 12px 12px 0 0;
+    position: relative;
+    overflow: hidden;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* Different gradient backgrounds for different course types */
+.course-image.interview-prep {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.course-image.technical {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.course-image.communication {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.course-image.leadership {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.course-image.beginner {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.course-image.intermediate {
+    background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+}
+
+.course-image.advanced {
+    background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+}
+
+.course-image.expert {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Add professional icons overlay */
+.course-image::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 60px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    backdrop-filter: blur(10px);
+}
+
+.course-image.interview-prep::after {
+    content: '🎯';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    z-index: 2;
+}
+
+.course-image.technical::after {
+    content: '💻';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    z-index: 2;
+}
+
+.course-image.communication::after {
+    content: '💬';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    z-index: 2;
+}
+
+.course-image.leadership::after {
+    content: '👑';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    z-index: 2;
+}
+
+.course-image.beginner::after {
+    content: '🌱';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    z-index: 2;
+}
+
+.course-image.intermediate::after {
+    content: '📈';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    z-index: 2;
+}
+
+.course-image.advanced::after {
+    content: '🚀';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    z-index: 2;
+}
+
+.course-image.expert::after {
+    content: '💎';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    z-index: 2;
+}
+
+/* Enhanced Course Cards */
+.course-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    overflow: hidden;
+    position: relative;
+}
+
+.course-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+.course-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    z-index: 3;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.course-badge[data-type="beginner"] {
+    background: linear-gradient(45deg, #48bb78, #68d391);
+    color: white;
+}
+
+.course-badge[data-type="intermediate"] {
+    background: linear-gradient(45deg, #ed8936, #f6ad55);
+    color: white;
+}
+
+.course-badge[data-type="advanced"] {
+    background: linear-gradient(45deg, #e53e3e, #fc8181);
+    color: white;
+}
+
+.course-badge[data-type="expert"] {
+    background: linear-gradient(45deg, #805ad5, #b794f6);
+    color: white;
+}
+
+/* Professional hover effects */
+.course-image {
+    transition: all 0.3s ease;
+}
+
+.course-card:hover .course-image {
+    transform: scale(1.05);
+}
+
+.course-card:hover .course-image::before {
+    background: rgba(255,255,255,0.3);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .courses-hero-content h1 {
+        font-size: 2rem;
+    }
+    
+    .courses-hero-content p {
+        font-size: 1.1rem;
+    }
+    
+    .courses-hero-content {
+        padding: 60px 20px;
+    }
+}

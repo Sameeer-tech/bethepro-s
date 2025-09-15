@@ -19,6 +19,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['user_email'] = $user['email'];
         $_SESSION['user_fullname'] = $user['fullname'];
+        $_SESSION['user_profile_picture'] = $user['profile_picture'];
         $_SESSION['login_success'] = "Welcome back, " . $user['fullname'] . "!";
         
         header("Location: index.php");
