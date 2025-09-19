@@ -44,10 +44,11 @@ class RecommendationEngine {
         
         // Get completed courses
         $stmt = $this->pdo->prepare("
-            SELECT course_name, level, status 
-            FROM enrollments 
-            WHERE user_id = ? 
-            ORDER BY enrollment_date DESC
+            SELECT e.course_name, c.level, e.status 
+            FROM enrollments e
+            LEFT JOIN courses c ON e.course_name = c.title
+            WHERE e.user_id = ? 
+            ORDER BY e.enrollment_date DESC
         ");
         $stmt->execute([$user_id]);
         $profile['completed_courses'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -255,7 +256,7 @@ class RecommendationEngine {
                 'current_role' => 'Junior Developer',
                 'target_role' => 'Senior Software Engineer',
                 'industry' => 'Technology',
-                'estimated_timeline_months' => 18,
+                'estimated_timeline_months' => '18 months',
                 'required_skills' => json_encode(['Programming', 'System Design', 'Code Review', 'Testing']),
                 'optional_skills' => json_encode(['Cloud Computing', 'DevOps', 'Machine Learning']),
                 'milestones' => json_encode([
@@ -273,7 +274,7 @@ class RecommendationEngine {
                 'current_role' => 'Team Member',
                 'target_role' => 'Project Manager',
                 'industry' => 'Various',
-                'estimated_timeline_months' => 12,
+                'estimated_timeline_months' => '12 months',
                 'required_skills' => json_encode(['Project Planning', 'Team Leadership', 'Communication', 'Risk Management']),
                 'optional_skills' => json_encode(['Agile Methodology', 'Budget Management', 'Stakeholder Management']),
                 'milestones' => json_encode([
@@ -291,7 +292,7 @@ class RecommendationEngine {
                 'current_role' => 'Analyst',
                 'target_role' => 'Senior Data Analyst',
                 'industry' => 'Technology/Finance',
-                'estimated_timeline_months' => 15,
+                'estimated_timeline_months' => '15 months',
                 'required_skills' => json_encode(['Data Analysis', 'SQL', 'Python/R', 'Data Visualization']),
                 'optional_skills' => json_encode(['Machine Learning', 'Big Data', 'Statistical Analysis']),
                 'milestones' => json_encode([
@@ -466,8 +467,8 @@ class RecommendationEngine {
     private function insertCareerPathRecommendation($path) {
         $stmt = $this->pdo->prepare("
             INSERT INTO career_path_recommendations 
-            (user_id, path_name, path_description, current_role, target_role, industry,
-             estimated_timeline_months, required_skills, optional_skills, milestones, compatibility_score) 
+            (user_id, path_name, path_description, current_job_role, target_job_role, industry,
+             estimated_duration, required_skills, optional_skills, milestones, compatibility_score) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
             compatibility_score = VALUES(compatibility_score),

@@ -1,5 +1,5 @@
 <?php
-$host = 'localhost';
+$host = 'Localhost'; // <-- use your actual database host
 $dbname = 'bethepros';   // <-- use your actual database name
 $username = 'root';
 $password = '';

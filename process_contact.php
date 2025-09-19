@@ -238,7 +238,7 @@ try {
     $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
     
     // Insert into database with user_id if available
-    $sql = "INSERT INTO contact_messages (user_id, fullname, email, phone, subject, message, status, created_at) 
+    $sql = "INSERT INTO contact_messages (user_id, name, email, phone, subject, message, status, created_at) 
             VALUES (:user_id, :name, :email, :phone, :subject, :message, 'unread', NOW())";
     
     $stmt = $pdo->prepare($sql);

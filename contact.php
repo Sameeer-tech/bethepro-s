@@ -203,7 +203,7 @@ include 'assets/header.php';
     <!-- Footer (same as index.html) -->
     <?php include 'assets/footer.php'; ?>
 
-    <script src="script.js"></script>
+    <script src="js/script.js"></script>
 
     Main Imp For contact.php
     <script>
