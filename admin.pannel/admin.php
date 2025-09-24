@@ -454,7 +454,21 @@ $recent_enrollments = $enrollments;
                                     <td><?php echo date('M j, Y', strtotime($enrollment['enrollment_date'])); ?></td>
                                     <td><span class="status-badge status-<?php echo strtolower($enrollment['status']); ?>"><?php echo ucfirst($enrollment['status']); ?></span></td>
                                     <td>
-                                        <button class="btn btn-secondary" style="padding: 0.5rem;" onclick="alert('Student: <?php echo htmlspecialchars($enrollment['first_name'] . ' ' . $enrollment['last_name']); ?>\\nEmail: <?php echo htmlspecialchars($enrollment['email']); ?>\\nPhone: <?php echo htmlspecialchars($enrollment['phone']); ?>\\nCountry: <?php echo htmlspecialchars($enrollment['country']); ?>\\nExperience: <?php echo htmlspecialchars($enrollment['experience_level']); ?>\\nSchedule: <?php echo htmlspecialchars($enrollment['schedule_preference']); ?><?php if($enrollment['career_goals']): ?>\\nGoals: <?php echo htmlspecialchars($enrollment['career_goals']); ?><?php endif; ?>')">
+                                        <button class="btn btn-secondary" style="padding: 0.5rem;" 
+                                                onclick="showEnrollmentDetails({
+                                                    id: '<?php echo htmlspecialchars($enrollment['enrollment_id']); ?>',
+                                                    firstName: '<?php echo htmlspecialchars($enrollment['first_name']); ?>',
+                                                    lastName: '<?php echo htmlspecialchars($enrollment['last_name']); ?>',
+                                                    email: '<?php echo htmlspecialchars($enrollment['email']); ?>',
+                                                    phone: '<?php echo htmlspecialchars($enrollment['phone']); ?>',
+                                                    country: '<?php echo htmlspecialchars($enrollment['country']); ?>',
+                                                    experience: '<?php echo htmlspecialchars($enrollment['experience_level']); ?>',
+                                                    schedule: '<?php echo htmlspecialchars($enrollment['schedule_preference'] ?? ''); ?>',
+                                                    goals: '<?php echo htmlspecialchars($enrollment['career_goals'] ?? ''); ?>',
+                                                    date: '<?php echo date('F j, Y \a\t g:i A', strtotime($enrollment['enrollment_date'])); ?>',
+                                                    status: '<?php echo htmlspecialchars($enrollment['status']); ?>'
+                                                })" 
+                                                title="View Details">
                                             <i class="fas fa-eye"></i>
                                         </button>
                                     </td>
@@ -519,7 +533,7 @@ $recent_enrollments = $enrollments;
                                             <i class="fas fa-check"></i>
                                         </button>
                                         <?php endif; ?>
-                                        <button class="btn btn-success" style="padding: 0.5rem;" onclick="replyToMessage('<?php echo htmlspecialchars($message['email']); ?>', '<?php echo htmlspecialchars($message['subject']); ?>')" title="Reply">
+                                        <button class="btn btn-success" style="padding: 0.5rem;" onclick="replyToMessage('<?php echo htmlspecialchars($message['email']); ?>', '<?php echo htmlspecialchars($message['subject']); ?>', <?php echo $message['id']; ?>)" title="Reply">
                                             <i class="fas fa-reply"></i>
                                         </button>
                                         <button class="btn btn-danger" style="padding: 0.5rem;" onclick="deleteMessage(<?php echo $message['id']; ?>)" title="Delete Message">
@@ -690,10 +704,16 @@ $recent_enrollments = $enrollments;
             }
         }
 
-        function replyToMessage(email, subject) {
-            const replySubject = subject.startsWith('Re:') ? subject : 'Re: ' + subject;
-            const mailtoLink = `mailto:${email}?subject=${encodeURIComponent(replySubject)}`;
-            window.location.href = mailtoLink;
+        function replyToMessage(email, subject, messageId) {
+            // Store user email for the reply modal
+            window.currentUserEmail = email;
+            
+            // Set up the reply modal
+            document.getElementById('replySubject').value = subject.startsWith('Re:') ? subject : 'Re: ' + subject;
+            document.getElementById('replyMessage').value = 'Dear User,\n\nThank you for contacting us.\n\nBest regards,\nBeThePro Admin';
+            
+            // Show the reply modal
+            document.getElementById('replyModal').style.display = 'block';
         }
 
         function deleteMessage(messageId) {
@@ -1095,6 +1115,129 @@ $recent_enrollments = $enrollments;
         `;
         document.head.insertAdjacentHTML('beforeend', modalStyles);
     </script>
+    <!-- Professional Enrollment Details Modal -->
+    <div id="enrollmentModal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-user-graduate"></i>
+                    Student Enrollment Details
+                </h3>
+                <button class="modal-close" onclick="closeEnrollmentModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="enrollment-details">
+                    <!-- Content will be populated by JavaScript -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeEnrollmentModal()">
+                    <i class="fas fa-times"></i>
+                    Close
+                </button>
+                <button class="btn btn-primary" onclick="contactStudent()">
+                    <i class="fas fa-envelope"></i>
+                    Contact Student
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simple Message View Modal -->
+    <div id="messageModal" class="message-modal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Message Details</h3>
+                <span class="close" onclick="closeMessageModal()">&times;</span>
+            </div>
+            <div class="modal-body" id="messageContent">
+                <!-- Content populated by JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeMessageModal()">Close</button>
+                <button class="btn btn-primary" onclick="openReplyModal()">Reply</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simple Reply Modal -->
+    <div id="replyModal" class="message-modal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Reply to Message</h3>
+                <span class="close" onclick="closeReplyModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="replyForm">
+                    <div style="margin-bottom: 15px;">
+                        <label>Subject:</label>
+                        <input type="text" id="replySubject" name="subject" style="width: 100%; padding: 8px;">
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label>Message:</label>
+                        <textarea id="replyMessage" name="message" rows="6" style="width: 100%; padding: 8px;" placeholder="Type your reply here..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeReplyModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="sendReply()">Send Reply</button>
+            </div>
+        </div>
+    </div>
+
     <script src="admin-simple.js"></script>
+    
+    <script>
+        // Reply modal functions
+        function openReplyModal() {
+            document.getElementById('replyModal').style.display = 'block';
+        }
+        
+        function closeReplyModal() {
+            document.getElementById('replyModal').style.display = 'none';
+            document.getElementById('replyForm').reset();
+        }
+        
+        function sendReply() {
+            const subject = document.getElementById('replySubject').value;
+            const message = document.getElementById('replyMessage').value;
+            const userEmail = window.currentUserEmail || '';
+            
+            if (!subject.trim() || !message.trim()) {
+                showNotification('Please fill in subject and message', 'error');
+                return;
+            }
+            
+            if (!userEmail.trim()) {
+                showNotification('User email is required', 'error');
+                return;
+            }
+            
+            fetch('send_reply.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `subject=${encodeURIComponent(subject)}&message=${encodeURIComponent(message)}&userEmail=${encodeURIComponent(userEmail)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ ' + data.message);
+                    closeReplyModal();
+                    location.reload();
+                } else {
+                    alert('❌ ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('❌ An error occurred while sending the reply');
+            });
+        }
+    </script>
 </body>
 </html>

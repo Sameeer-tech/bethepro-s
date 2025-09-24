@@ -148,13 +148,21 @@ try {
     $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
     $stmt->execute([$user_id]);
     $user = $stmt->fetch();
+    
+    // Ensure user is found and is an array
+    if (!$user || !is_array($user)) {
+        $error = "User not found or invalid user data.";
+        $user = ['fullname' => 'Unknown', 'email' => 'unknown@email.com', 'role' => 'Student', 'created_at' => date('Y-m-d H:i:s')];
+    }
 } catch (PDOException $e) {
     $error = "Error fetching user data: " . $e->getMessage();
+    $user = ['fullname' => 'Unknown', 'email' => 'unknown@email.com', 'role' => 'Student', 'created_at' => date('Y-m-d H:i:s')];
 }
 
-// Get user's contact messages with admin view status
-$contact_messages = [];
+// Get user's contact messages with replies (enhanced conversation view)
+$contact_conversations = [];
 try {
+    // Get all user's contact messages
     $stmt = $pdo->prepare("
         SELECT cm.*, 
         cm.name,
@@ -173,9 +181,85 @@ try {
     ");
     $stmt->execute([$user['email']]);
     $contact_messages = $stmt->fetchAll();
+    
+    // Get admin replies for each message and create conversations
+    foreach ($contact_messages as $message) {
+        $conversation = [
+            'original_message' => $message,
+            'replies' => []
+        ];
+        
+        // Get replies to this message (match by subject or email/time proximity)
+        try {
+            $replyStmt = $pdo->prepare("
+                SELECT * FROM admin_replies 
+                WHERE user_email = ? 
+                AND (subject LIKE ? OR subject LIKE ?)
+                ORDER BY created_at ASC
+            ");
+            $replyStmt->execute([
+                $user['email'], 
+                'Re: ' . $message['subject'] . '%',
+                '%' . $message['subject'] . '%'
+            ]);
+            $conversation['replies'] = $replyStmt->fetchAll();
+            
+            // Mark message as replied if there are replies
+            if (count($conversation['replies']) > 0) {
+                $conversation['original_message']['admin_status'] = 'Replied';
+            }
+        } catch (PDOException $e) {
+            $conversation['replies'] = [];
+        }
+        
+        $contact_conversations[] = $conversation;
+    }
+    
+    // Keep original format for backward compatibility
+    $contact_messages = $contact_messages;
+} catch (PDOException $e) {
+    $contact_conversations = [];
+    $contact_messages = [];
+}
+
+// Get admin replies to user's messages
+$admin_replies = [];
+try {
+    $stmt = $pdo->prepare("
+        SELECT * FROM admin_replies 
+        WHERE user_email = ?
+        ORDER BY created_at DESC
+    ");
+    $stmt->execute([$user['email']]);
+    $admin_replies = $stmt->fetchAll();
 } catch (PDOException $e) {
     // Table might not exist yet, continue with empty array
-    $contact_messages = [];
+    $admin_replies = [];
+}
+
+// Get user's notifications (bulletproof)
+$notifications = [];
+try {
+    // Try user_notifications first
+    $stmt = $pdo->prepare("SELECT * FROM user_notifications WHERE user_id = ? AND is_read = 0 ORDER BY created_at DESC");
+    $stmt->execute([$user_id]);
+    $notifications = $stmt->fetchAll();
+    
+    // Add notification_type if missing for compatibility
+    foreach ($notifications as &$notification) {
+        if (!isset($notification['notification_type'])) {
+            $notification['notification_type'] = 'general';
+        }
+    }
+} catch (PDOException $e) {
+    // Try simple_notifications as fallback
+    try {
+        $stmt = $pdo->prepare("SELECT *, 'admin_reply' as notification_type FROM simple_notifications WHERE user_email = ? ORDER BY created_at DESC");
+        $stmt->execute([$user['email']]);
+        $notifications = $stmt->fetchAll();
+    } catch (PDOException $e) {
+        $notifications = [];
+    }
 }
 
 // Get user's enrollments with admin view tracking
@@ -295,13 +379,13 @@ include 'assets/header.php';
         <?php if ($message): ?>
             <div class="alert alert-success">
                 <i class="fas fa-check-circle"></i>
-                <?php echo htmlspecialchars($message); ?>
+                <?php echo htmlspecialchars(is_array($message) ? implode(', ', $message) : $message); ?>
             </div>
         <?php endif; ?>
         <?php if ($error): ?>
             <div class="alert alert-error">
                 <i class="fas fa-exclamation-circle"></i>
-                <?php echo htmlspecialchars($error); ?>
+                <?php echo htmlspecialchars(is_array($error) ? implode(', ', $error) : $error); ?>
             </div>
         <?php endif; ?>
         
@@ -309,7 +393,7 @@ include 'assets/header.php';
             <div class="profile-info">
                 <div class="profile-avatar">
                     <?php if($user['profile_picture'] && file_exists($user['profile_picture'])): ?>
-                        <img src="<?php echo htmlspecialchars($user['profile_picture']); ?>" alt="Profile Picture" class="profile-avatar-img">
+                        <img src="<?php echo htmlspecialchars($user['profile_picture'] ?? 'uploads/profiles/default.jpg'); ?>" alt="Profile Picture" class="profile-avatar-img">
                     <?php else: ?>
                         <div class="profile-avatar-initial">
                             <?php echo strtoupper(substr($user['fullname'], 0, 1)); ?>
@@ -317,10 +401,10 @@ include 'assets/header.php';
                     <?php endif; ?>
                 </div>
                 <div class="profile-details">
-                    <h1><?php echo htmlspecialchars($user['fullname']); ?></h1>
-                    <p>📧 <?php echo htmlspecialchars($user['email']); ?></p>
+                    <h1><?php echo htmlspecialchars($user['fullname'] ?? 'User'); ?></h1>
+                    <p>📧 <?php echo htmlspecialchars($user['email'] ?? 'No email'); ?></p>
                     <p>👤 <?php echo htmlspecialchars($user['role'] ?? 'Student'); ?></p>
-                    <p>📅 Member since <?php echo date('F Y', strtotime($user['created_at'])); ?></p>
+                    <p>📅 Member since <?php echo $user['created_at'] ? date('F Y', strtotime($user['created_at'])) : 'Unknown'; ?></p>
                 </div>
                 <div class="profile-actions">
                     <button class="btn btn-primary" onclick="openEditModal('profile')">
@@ -366,14 +450,14 @@ include 'assets/header.php';
                     <div class="info-icon">👤</div>
                     <div class="info-content">
                         <h4>Full Name</h4>
-                        <p><?php echo htmlspecialchars($user['fullname']); ?></p>
+                        <p><?php echo htmlspecialchars($user['fullname'] ?? 'User'); ?></p>
                     </div>
                 </div>
                 <div class="info-item">
                     <div class="info-icon">📧</div>
                     <div class="info-content">
                         <h4>Email Address</h4>
-                        <p><?php echo htmlspecialchars($user['email']); ?></p>
+                        <p><?php echo htmlspecialchars($user['email'] ?? 'No email'); ?></p>
                     </div>
                 </div>
                 <div class="info-item">
@@ -392,6 +476,34 @@ include 'assets/header.php';
                 </div>
             </div>
         </div>
+
+        <!-- Notifications Section -->
+        <?php if (!empty($notifications)): ?>
+        <div class="section">
+            <h2>🔔 New Notifications</h2>
+            <?php foreach ($notifications as $notification): ?>
+                <div class="notification-card" data-notification-id="<?php echo $notification['id']; ?>">
+                    <div class="notification-header">
+                        <div class="notification-icon">
+                            <?php if ($notification['notification_type'] === 'admin_reply'): ?>
+                                <i class="fas fa-reply" style="color: var(--primary-color);"></i>
+                            <?php else: ?>
+                                <i class="fas fa-bell" style="color: var(--secondary-color);"></i>
+                            <?php endif; ?>
+                        </div>
+                        <div class="notification-content">
+                            <h4><?php echo htmlspecialchars($notification['title']); ?></h4>
+                            <p><?php echo htmlspecialchars($notification['message']); ?></p>
+                            <div class="notification-date">
+                                <i class="fas fa-clock"></i>
+                                <?php echo date('M d, Y \a\t g:i A', strtotime($notification['created_at'])); ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
 
         <!-- Recommendations Section -->
         <div class="section">
@@ -602,42 +714,96 @@ include 'assets/header.php';
 
         <!-- Contact Messages Section -->
         <div class="section">
-            <h2>My Contact Messages</h2>
-            <?php if (empty($contact_messages)): ?>
+            <div class="section-header">
+                <h2>💬 My Contact Messages</h2>
+                <a href="contact.php" class="view-all-link">Send New Message →</a>
+            </div>
+            
+            <?php if (empty($contact_conversations)): ?>
                 <div class="no-messages">
                     <div class="no-messages-icon">💬</div>
                     <h3>No Messages Sent</h3>
-                    <p>You haven't sent any contact messages yet.</p>
-                    <a href="contact.php" class="cta-button">Contact Us</a>
+                    <p>You haven't sent any contact messages yet. Start a conversation with our team!</p>
+                    <a href="contact.php" class="cta-button">Contact Us Now</a>
                 </div>
             <?php else: ?>
-                <?php foreach ($contact_messages as $message_item): ?>
-                    <div class="message-card">
-                        <div class="message-header">
-                            <div class="message-info">
-                                <div class="message-subject">
-                                    <strong><?php echo htmlspecialchars($message_item['subject'] ?: 'No Subject'); ?></strong>
+                <div id="messageNotification" class="message-notification" style="display:none;">
+                    <div class="notification-content">
+                        <i class="fas fa-bell"></i>
+                        <span>You have new reply(s) from our admin team!</span>
+                        <button onclick="closeNotification()" class="close-notification">×</button>
+                    </div>
+                </div>
+                
+                <?php foreach ($contact_conversations as $conversation): ?>
+                    <?php $original = $conversation['original_message']; ?>
+                    <?php $replies = $conversation['replies']; ?>
+                    
+                    <div class="conversation-card <?php echo count($replies) > 0 ? 'has-replies' : ''; ?>">
+                        <!-- Original Message -->
+                        <div class="original-message">
+                            <div class="message-header">
+                                <div class="message-info">
+                                    <div class="message-subject">
+                                        <i class="fas fa-envelope" style="color: var(--primary-color);"></i>
+                                        <strong><?php echo htmlspecialchars($original['subject'] ?: 'No Subject'); ?></strong>
+                                    </div>
+                                    <div class="message-date">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        <?php echo date('M d, Y \a\t g:i A', strtotime($original['message_date'])); ?>
+                                    </div>
                                 </div>
-                                <div class="message-date">
-                                    <i class="fas fa-calendar-alt"></i>
-                                    <?php echo date('M d, Y \a\t g:i A', strtotime($message_item['message_date'])); ?>
+                                <div class="status-badges">
+                                    <span class="admin-status status-<?php echo strtolower(str_replace(' ', '-', $original['admin_status'])); ?>">
+                                        <?php echo htmlspecialchars($original['admin_status']); ?>
+                                    </span>
+                                    <?php if (count($replies) > 0): ?>
+                                        <span class="reply-count">
+                                            <i class="fas fa-reply"></i>
+                                            <?php echo count($replies); ?> Reply<?php echo count($replies) > 1 ? 'ies' : ''; ?>
+                                        </span>
+                                    <?php endif; ?>
                                 </div>
                             </div>
-                            <span class="admin-status status-<?php echo strtolower(str_replace(' ', '-', $message_item['admin_status'])); ?>">
-                                Admin: <?php echo htmlspecialchars($message_item['admin_status']); ?>
-                            </span>
-                        </div>
-                        <div class="message-content">
-                            <div class="message-text">
-                                <?php echo nl2br(htmlspecialchars($message_item['message'])); ?>
-                            </div>
-                            <?php if ($message_item['admin_status'] === 'Replied'): ?>
-                                <div class="reply-indicator">
-                                    <i class="fas fa-reply"></i>
-                                    <span>This message has been replied to by our team.</span>
+                            <div class="message-content">
+                                <div class="sender-info">
+                                    <strong>You wrote:</strong>
                                 </div>
-                            <?php endif; ?>
+                                <div class="message-text">
+                                    <?php echo nl2br(htmlspecialchars($original['message'])); ?>
+                                </div>
+                            </div>
                         </div>
+                        
+                        <!-- Admin Replies -->
+                        <?php if (count($replies) > 0): ?>
+                            <div class="replies-section">
+                                <?php foreach ($replies as $reply): ?>
+                                    <div class="admin-reply new-reply">
+                                        <div class="reply-header">
+                                            <div class="reply-info">
+                                                <div class="admin-avatar">
+                                                    <i class="fas fa-user-shield"></i>
+                                                </div>
+                                                <div class="reply-details">
+                                                    <div class="admin-name">BeThePro Admin</div>
+                                                    <div class="reply-date">
+                                                        <i class="fas fa-clock"></i>
+                                                        <?php echo date('M d, Y \a\t g:i A', strtotime($reply['created_at'])); ?>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <span class="reply-badge">Reply</span>
+                                        </div>
+                                        <div class="reply-content">
+                                            <div class="reply-text">
+                                                <?php echo nl2br(htmlspecialchars($reply['message'])); ?>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
             <?php endif; ?>
@@ -788,4 +954,165 @@ document.getElementById('profile_picture').addEventListener('change', function(e
         document.getElementById('picturePreview').style.display = 'none';
     }
 });
+
+// Mark notifications as read when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    const notifications = document.querySelectorAll('.notification-card[data-notification-id]');
+    
+    notifications.forEach(function(notification) {
+        const notificationId = notification.getAttribute('data-notification-id');
+        
+        // Mark as read after 3 seconds of viewing
+        setTimeout(function() {
+            markNotificationAsRead(notificationId);
+        }, 3000);
+    });
+});
+
+function markNotificationAsRead(notificationId) {
+    fetch('mark_notification_read.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `notification_id=${encodeURIComponent(notificationId)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const notification = document.querySelector(`[data-notification-id="${notificationId}"]`);
+            if (notification) {
+                notification.style.opacity = '0.7';
+                notification.classList.add('read');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error marking notification as read:', error);
+    });
+}
+
+// Enhanced Contact Messages functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Check for new replies and show notification
+    checkForNewReplies();
+    
+    // Add smooth scroll animation to new replies
+    const newReplies = document.querySelectorAll('.new-reply');
+    newReplies.forEach(function(reply, index) {
+        setTimeout(function() {
+            reply.style.animation = `slideIn 0.5s ease-out ${index * 0.1}s both`;
+        }, 500);
+    });
+    
+    // Add click handlers for conversation cards
+    const conversationCards = document.querySelectorAll('.conversation-card');
+    conversationCards.forEach(function(card) {
+        card.addEventListener('click', function(e) {
+            // Don't trigger if clicking on links or buttons
+            if (e.target.tagName !== 'A' && e.target.tagName !== 'BUTTON') {
+                card.classList.toggle('expanded');
+            }
+        });
+    });
+});
+
+function checkForNewReplies() {
+    // Count total replies
+    const replyCount = document.querySelectorAll('.admin-reply').length;
+    
+    if (replyCount > 0) {
+        // Check if user has seen these replies before
+        const lastSeenReplies = localStorage.getItem('lastSeenReplies') || '0';
+        
+        if (parseInt(replyCount) > parseInt(lastSeenReplies)) {
+            showNewReplyNotification(replyCount - parseInt(lastSeenReplies));
+            
+            // Update the last seen count after showing notification
+            setTimeout(function() {
+                localStorage.setItem('lastSeenReplies', replyCount.toString());
+            }, 3000);
+        }
+    }
+}
+
+function showNewReplyNotification(newCount) {
+    const notification = document.getElementById('messageNotification');
+    if (notification) {
+        const message = newCount === 1 ? 
+            'You have a new reply from our admin team!' : 
+            `You have ${newCount} new replies from our admin team!`;
+        
+        notification.querySelector('span').textContent = message;
+        notification.style.display = 'block';
+        
+        // Auto-hide after 10 seconds
+        setTimeout(function() {
+            closeNotification();
+        }, 10000);
+        
+        // Play notification sound if available
+        try {
+            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAeCD2Uy/LNeSsFJYHI8N2QQAoUX7Dp66hVFApGn+DyvmAeCD2Uy/LNeSsFJYHI8N2QQAoUX7Dp66hVFApGn+DyvmAeCD2Uy/LNeSsFJYHI8N2QQAoUX7Dp66hVFApGn+DyvmAeCD2Uy/LNeSsFJYHI8N2QQAoUX7Dp66hVFApGn+DyvmAeCw==');
+            audio.volume = 0.3;
+            audio.play().catch(() => {}); // Ignore if audio fails
+        } catch(e) {}
+    }
+}
+
+function closeNotification() {
+    const notification = document.getElementById('messageNotification');
+    if (notification) {
+        notification.style.animation = 'slideOut 0.3s ease-in';
+        setTimeout(function() {
+            notification.style.display = 'none';
+            notification.style.animation = '';
+        }, 300);
+    }
+}
+
+// Add slideOut animation to CSS if not present
+if (!document.querySelector('style[data-message-animations]')) {
+    const style = document.createElement('style');
+    style.setAttribute('data-message-animations', 'true');
+    style.textContent = `
+        @keyframes slideOut {
+            from { transform: translateY(0); opacity: 1; }
+            to { transform: translateY(-20px); opacity: 0; }
+        }
+        
+        .conversation-card.expanded {
+            transform: scale(1.02);
+            z-index: 10;
+            position: relative;
+        }
+        
+        .conversation-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// Real-time notification check (optional - polls every 30 seconds)
+setInterval(function() {
+    // Only check if page is visible
+    if (!document.hidden) {
+        fetch('check_new_replies.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.hasNewReplies) {
+                // Reload page to show new replies
+                location.reload();
+            }
+        })
+        .catch(() => {}); // Ignore errors for polling
+    }
+}, 30000); // Check every 30 seconds
 </script>

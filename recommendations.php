@@ -12,7 +12,17 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = $_SESSION['user_id'];
 $message = '';
 
-// Generate fresh recommendations and notifications for the user
+// Option to use simple recommendations system
+// Change this to true for easier, more user-friendly recommendations
+$use_simple_system = true;
+
+if ($use_simple_system) {
+    // Redirect to the simple, user-friendly version
+    header("Location: simple-recommendations.php");
+    exit();
+}
+
+// Generate fresh recommendations and notifications for the user (Original Complex System)
 try {
     // Check if database connection is available
     if (!isset($pdo) || !$pdo) {

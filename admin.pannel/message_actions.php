@@ -213,6 +213,63 @@ try {
             }
             break;
             
+        case 'send_reply':
+            try {
+                $subject = $_POST['subject'] ?? '';
+                $message = $_POST['message'] ?? '';
+                $userEmail = $_POST['userEmail'] ?? '';
+                
+                // Simple validation
+                if (empty($subject) || empty($message) || empty($userEmail)) {
+                    echo json_encode(['success' => false, 'message' => 'Subject, message, and user email are required']);
+                    exit();
+                }
+                
+                // Verify user exists
+                $userCheckStmt = $pdo->prepare("SELECT id, fullname FROM users WHERE email = ?");
+                $userCheckStmt->execute([$userEmail]);
+                $userData = $userCheckStmt->fetch();
+                
+                if (!$userData) {
+                    echo json_encode(['success' => false, 'message' => 'User not found with email: ' . $userEmail]);
+                    exit();
+                }
+                
+                // Create admin_replies table if needed (simple version)
+                $pdo->exec("CREATE TABLE IF NOT EXISTS admin_replies (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_email VARCHAR(255) NOT NULL,
+                    user_id INT,
+                    subject VARCHAR(255) NOT NULL,
+                    message TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )");
+                
+                // Insert admin reply
+                $stmt = $pdo->prepare("INSERT INTO admin_replies (user_email, user_id, subject, message) VALUES (?, ?, ?, ?)");
+                $result = $stmt->execute([$userEmail, $userData['id'], $subject, $message]);
+                
+                if ($result) {
+                    // Create notification (simple version)
+                    $notificationStmt = $pdo->prepare("INSERT INTO user_notifications (user_id, notification_type, title, message, priority) VALUES (?, ?, ?, ?, ?)");
+                    $notificationStmt->execute([
+                        $userData['id'], 
+                        'admin_reply', 
+                        'New Reply from BeThePro Admin', 
+                        'You have received a reply to your message.',
+                        'high'
+                    ]);
+                    
+                    echo json_encode(['success' => true, 'message' => 'Reply sent successfully!']);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Failed to save reply']);
+                }
+                
+            } catch (Exception $e) {
+                echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+            }
+            break;
+            
         default:
             throw new Exception('Invalid action');
     }

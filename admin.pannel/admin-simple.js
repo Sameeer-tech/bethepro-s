@@ -539,3 +539,225 @@ function markAllAsRead() {
     };
     xhr.send('action=markAllAsRead');
 }
+
+// Professional Enrollment Modal Functions
+function showEnrollmentDetails(enrollment) {
+    var modal = document.getElementById('enrollmentModal');
+    var detailsContainer = modal.querySelector('.enrollment-details');
+    
+    // Build the professional details view
+    var detailsHTML = `
+        <div class="detail-section">
+            <h4><i class="fas fa-user"></i> Personal Information</h4>
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <div class="detail-label">Full Name</div>
+                    <div class="detail-value">${enrollment.firstName} ${enrollment.lastName}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Email Address</div>
+                    <div class="detail-value">${enrollment.email}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Phone Number</div>
+                    <div class="detail-value">${enrollment.phone}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Country</div>
+                    <div class="detail-value">${enrollment.country}</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="detail-section">
+            <h4><i class="fas fa-graduation-cap"></i> Academic Information</h4>
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <div class="detail-label">Experience Level</div>
+                    <div class="detail-value">${enrollment.experience}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Preferred Schedule</div>
+                    <div class="detail-value">${enrollment.schedule || 'Not specified'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Enrollment Date</div>
+                    <div class="detail-value">${enrollment.date}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Status</div>
+                    <div class="detail-value">
+                        <span class="status-badge status-${enrollment.status.toLowerCase()}">${enrollment.status}</span>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    
+    // Add career goals section if available
+    if (enrollment.goals && enrollment.goals.trim()) {
+        detailsHTML += `
+        <div class="detail-section">
+            <h4><i class="fas fa-bullseye"></i> Career Goals</h4>
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <div class="detail-label">Goals & Objectives</div>
+                    <div class="detail-value long-text">${enrollment.goals}</div>
+                </div>
+            </div>
+        </div>`;
+    }
+    
+    detailsContainer.innerHTML = detailsHTML;
+    
+    // Store enrollment data for potential actions
+    modal.setAttribute('data-enrollment-id', enrollment.id);
+    modal.setAttribute('data-student-email', enrollment.email);
+    modal.setAttribute('data-student-name', enrollment.firstName + ' ' + enrollment.lastName);
+    
+    // Show modal
+    modal.classList.add('active');
+    
+    // Close modal when clicking outside
+    modal.onclick = function(e) {
+        if (e.target === modal) {
+            closeEnrollmentModal();
+        }
+    };
+}
+
+function closeEnrollmentModal() {
+    var modal = document.getElementById('enrollmentModal');
+    modal.classList.remove('active');
+}
+
+function contactStudent() {
+    var modal = document.getElementById('enrollmentModal');
+    var studentEmail = modal.getAttribute('data-student-email');
+    var studentName = modal.getAttribute('data-student-name');
+    
+    // Create mailto link
+    var subject = encodeURIComponent('Regarding Your Course Enrollment - BeThePro');
+    var body = encodeURIComponent(`Dear ${studentName},\n\nThank you for your interest in our courses. We wanted to reach out regarding your enrollment.\n\nBest regards,\nBeThePro Team`);
+    var mailtoLink = `mailto:${studentEmail}?subject=${subject}&body=${body}`;
+    
+    // Open email client
+    window.location.href = mailtoLink;
+    
+    // Close modal
+    closeEnrollmentModal();
+}
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeEnrollmentModal();
+        closeMessageModal();
+        closeReplyModal();
+    }
+});
+
+// Message Modal Functions
+var currentMessage = null;
+
+function viewMessage(message) {
+    currentMessage = message;
+    var modal = document.getElementById('messageModal');
+    var content = document.getElementById('messageContent');
+    
+    content.innerHTML = `
+        <div class="message-info">
+            <p><strong>From:</strong> ${message.name}</p>
+            <p><strong>Email:</strong> ${message.email}</p>
+            <p><strong>Phone:</strong> ${message.phone || 'Not provided'}</p>
+            <p><strong>Subject:</strong> ${message.subject}</p>
+            <p><strong>Date:</strong> ${new Date(message.created_at).toLocaleDateString()}</p>
+            <p><strong>Status:</strong> ${message.status}</p>
+        </div>
+        <div class="message-text">${message.message}</div>
+    `;
+    
+    modal.style.display = 'block';
+    
+    // Mark as read if unread
+    if (message.status === 'unread') {
+        markMessageAsRead(message.id);
+    }
+}
+
+function closeMessageModal() {
+    document.getElementById('messageModal').style.display = 'none';
+    currentMessage = null;
+}
+
+function openReplyModal() {
+    if (!currentMessage) return;
+    
+    document.getElementById('replySubject').value = 'Re: ' + currentMessage.subject;
+    document.getElementById('replyMessage').value = `Dear ${currentMessage.name},\n\nThank you for contacting us.\n\nBest regards,\nBeThePro Admin`;
+    
+    // Store user email for the reply
+    window.currentUserEmail = currentMessage.email;
+    
+    closeMessageModal();
+    document.getElementById('replyModal').style.display = 'block';
+}
+
+function closeReplyModal() {
+    document.getElementById('replyModal').style.display = 'none';
+    document.getElementById('replyForm').reset();
+}
+
+function sendReply() {
+    var subject = document.getElementById('replySubject').value;
+    var message = document.getElementById('replyMessage').value;
+    var userEmail = window.currentUserEmail || '';
+    
+    if (!subject.trim() || !message.trim()) {
+        alert('Please fill in subject and message');
+        return;
+    }
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', 'message_actions.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            try {
+                var response = JSON.parse(xhr.responseText);
+                if (response.success) {
+                    alert('Reply sent successfully! User will be notified.');
+                    closeReplyModal();
+                    location.reload();
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            } catch (e) {
+                alert('Error: Server response error');
+            }
+        }
+    };
+    xhr.send(`action=send_reply&subject=${encodeURIComponent(subject)}&message=${encodeURIComponent(message)}&userEmail=${encodeURIComponent(userEmail)}`);
+}
+
+// Direct reply function - simplified
+function replyToMessage(email, subject, messageId) {
+    document.getElementById('replySubject').value = 'Re: ' + subject;
+    document.getElementById('replyMessage').value = 'Dear User,\n\nThank you for contacting us.\n\nBest regards,\nBeThePro Admin';
+    
+    // Store user email for the reply
+    window.currentUserEmail = email;
+    
+    document.getElementById('replyModal').style.display = 'block';
+}
+
+// Click outside modal to close
+window.onclick = function(event) {
+    var messageModal = document.getElementById('messageModal');
+    var replyModal = document.getElementById('replyModal');
+    if (event.target === messageModal) {
+        closeMessageModal();
+    }
+    if (event.target === replyModal) {
+        closeReplyModal();
+    }
+};
