@@ -109,8 +109,8 @@ include 'assets/header.php';
                             echo '<p class="course-description">' . htmlspecialchars($course['description']) . '</p>';
                             echo '<div class="course-meta">';
                             echo '<span class="duration">⏱️ ' . htmlspecialchars($course['duration']) . '</span>';
-                            echo '<span class="lessons">📚 24 Lessons</span>';
-                            echo '<span class="level">📊 ' . htmlspecialchars($course['level']) . '</span>';
+                            echo '<span class="lessons"><i class="fas fa-book"></i> 24 Lessons</span>';
+                            echo '<span class="level"><i class="fas fa-chart-bar"></i> ' . htmlspecialchars($course['level']) . '</span>';
                             echo '</div>';
                             echo '<div class="course-price">';
                             echo '<span class="price">$' . number_format($course['price'], 0) . '</span>';
@@ -199,7 +199,7 @@ include 'assets/header.php';
                         echo '<p class="course-description">' . htmlspecialchars($course['description']) . '</p>';
                         echo '<div class="course-meta">';
                         echo '<span class="duration">⏱️ ' . htmlspecialchars($course['duration']) . '</span>';
-                        echo '<span class="lessons">📚 24 Lessons</span>';
+                        echo '<span class="lessons"><i class="fas fa-book"></i> 24 Lessons</span>';
                         echo '<span class="level">📊 ' . htmlspecialchars($course['level']) . '</span>';
                         echo '</div>';
                         echo '<div class="course-price">';
@@ -221,7 +221,7 @@ include 'assets/header.php';
             <h2 class="section-title">Why Our Courses Work</h2>
             <div class="benefits-grid">
                 <div class="benefit-card">
-                    <div class="benefit-icon">🎯</div>
+                    <div class="benefit-icon"><i class="fas fa-bullseye"></i></div>
                     <h3>Structured Learning Path</h3>
                     <p>Step-by-step modules that build your skills progressively.</p>
                 </div>

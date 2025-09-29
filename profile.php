@@ -13,6 +13,12 @@ $user_id = $_SESSION['user_id'];
 $message = '';
 $error = '';
 
+// Check for session-based success message
+if (isset($_SESSION['success_message'])) {
+    $message = $_SESSION['success_message'];
+    unset($_SESSION['success_message']); // Clear the message after displaying
+}
+
 // Handle profile updates
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['update_profile'])) {
@@ -37,10 +43,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt->execute([$fullname, $email, $user_id]);
                     
                     // Update session data
-                    $_SESSION['fullname'] = $fullname;
-                    $_SESSION['email'] = $email;
+                    $_SESSION['user_fullname'] = $fullname;
+                    $_SESSION['user_email'] = $email;
                     
-                    $message = "Profile updated successfully!";
+                    // Set success message in session and redirect to prevent form resubmission
+                    $_SESSION['success_message'] = "Profile updated successfully!";
+                    header("Location: profile.php");
+                    exit();
                 }
             } catch (PDOException $e) {
                 $error = "Error updating profile: " . $e->getMessage();
@@ -90,7 +99,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             unlink($old_picture);
                         }
                         
-                        $message = "Profile picture updated successfully!";
+                        // Set success message in session and redirect to prevent form resubmission
+                        $_SESSION['success_message'] = "Profile picture updated successfully!";
+                        header("Location: profile.php");
+                        exit();
                     } catch (PDOException $e) {
                         $error = "Error updating profile picture: " . $e->getMessage();
                         // Delete uploaded file if database update failed
@@ -134,7 +146,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt = $pdo->prepare("UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
                     $stmt->execute([$hashed_password, $user_id]);
                     
-                    $message = "Password changed successfully!";
+                    // Set success message in session and redirect to prevent form resubmission
+                    $_SESSION['success_message'] = "Password changed successfully!";
+                    header("Location: profile.php");
+                    exit();
                 }
             } catch (PDOException $e) {
                 $error = "Error changing password: " . $e->getMessage();
@@ -273,30 +288,23 @@ try {
         $admin_viewed_exists = false;
     }
     
-    if ($admin_viewed_exists) {
-        $stmt = $pdo->prepare("
-            SELECT e.*, c.course_name, c.description, c.duration, c.price, c.instructor, c.level,
-            CASE 
-                WHEN e.admin_viewed = 1 THEN 'Viewed' 
-                ELSE 'Pending' 
-            END as admin_status
-            FROM enrollments e 
-            LEFT JOIN courses c ON e.course_id = c.id 
-            WHERE e.user_id = ? OR e.email = ?
-            ORDER BY e.enrollment_date DESC
-        ");
-        $stmt->execute([$user_id, $user['email']]);
-    } else {
-        $stmt = $pdo->prepare("
-            SELECT e.*, c.course_name, c.description, c.duration, c.price, c.instructor, c.level,
-            'Unknown' as admin_status
-            FROM enrollments e 
-            LEFT JOIN courses c ON e.course_id = c.id 
-            WHERE e.user_id = ? OR e.email = ?
-            ORDER BY e.enrollment_date DESC
-        ");
-        $stmt->execute([$user_id, $user['email']]);
-    }
+    $stmt = $pdo->prepare("
+        SELECT e.*, 
+        COALESCE(e.course_name, 'General Course') as course_name,
+        COALESCE(e.career_goals, 'Professional course enrollment') as description,
+        '4-6 weeks' as duration,
+        COALESCE(e.course_price, 0) as price,
+        'BeThePro Expert Team' as instructor,
+        COALESCE(e.experience_level, 'All Levels') as level,
+        CASE 
+            WHEN e.admin_viewed = 1 THEN 'Viewed' 
+            ELSE 'Pending' 
+        END as admin_status
+        FROM enrollments e 
+        WHERE e.user_id = ? OR e.email = ?
+        ORDER BY e.enrollment_date DESC
+    ");
+    $stmt->execute([$user_id, $user['email']]);
     $enrollments = $stmt->fetchAll();
 } catch (PDOException $e) {
     // Table might not exist yet, continue with empty array
@@ -402,19 +410,13 @@ include 'assets/header.php';
                 </div>
                 <div class="profile-details">
                     <h1><?php echo htmlspecialchars($user['fullname'] ?? 'User'); ?></h1>
-                    <p>📧 <?php echo htmlspecialchars($user['email'] ?? 'No email'); ?></p>
-                    <p>👤 <?php echo htmlspecialchars($user['role'] ?? 'Student'); ?></p>
-                    <p>📅 Member since <?php echo $user['created_at'] ? date('F Y', strtotime($user['created_at'])) : 'Unknown'; ?></p>
+                    <p><i class="fas fa-envelope"></i> <?php echo htmlspecialchars($user['email'] ?? 'No email'); ?></p>
+                    <p><i class="fas fa-user"></i> <?php echo htmlspecialchars($user['role'] ?? 'Student'); ?></p>
+                    <p><i class="fas fa-calendar-alt"></i> Member since <?php echo $user['created_at'] ? date('F Y', strtotime($user['created_at'])) : 'Unknown'; ?></p>
                 </div>
                 <div class="profile-actions">
                     <button class="btn btn-primary" onclick="openEditModal('profile')">
                         <i class="fas fa-edit"></i> Edit Profile
-                    </button>
-                    <button class="btn btn-secondary" onclick="openEditModal('password')">
-                        <i class="fas fa-lock"></i> Change Password
-                    </button>
-                    <button class="btn btn-outline" onclick="openEditModal('picture')">
-                        <i class="fas fa-camera"></i> Change Picture
                     </button>
                 </div>
             </div>
@@ -422,22 +424,22 @@ include 'assets/header.php';
 
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-icon">📚</div>
+                <div class="stat-icon"><i class="fas fa-book"></i></div>
                 <div class="stat-number"><?php echo $enrollment_stats['total_enrollments']; ?></div>
                 <div class="stat-label">Total Enrollments</div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">✅</div>
+                <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
                 <div class="stat-number"><?php echo $enrollment_stats['completed_courses']; ?></div>
                 <div class="stat-label">Completed Courses</div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">🎯</div>
+                <div class="stat-icon"><i class="fas fa-bullseye"></i></div>
                 <div class="stat-number"><?php echo $enrollment_stats['in_progress']; ?></div>
                 <div class="stat-label">In Progress</div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">💰</div>
+                <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
                 <div class="stat-number">$<?php echo number_format($enrollment_stats['total_spent'], 2); ?></div>
                 <div class="stat-label">Total Invested</div>
             </div>
@@ -447,28 +449,28 @@ include 'assets/header.php';
             <h2>Personal Information</h2>
             <div class="personal-info-grid">
                 <div class="info-item">
-                    <div class="info-icon">👤</div>
+                    <div class="info-icon"><i class="fas fa-user"></i></div>
                     <div class="info-content">
                         <h4>Full Name</h4>
                         <p><?php echo htmlspecialchars($user['fullname'] ?? 'User'); ?></p>
                     </div>
                 </div>
                 <div class="info-item">
-                    <div class="info-icon">📧</div>
+                    <div class="info-icon"><i class="fas fa-envelope"></i></div>
                     <div class="info-content">
                         <h4>Email Address</h4>
                         <p><?php echo htmlspecialchars($user['email'] ?? 'No email'); ?></p>
                     </div>
                 </div>
                 <div class="info-item">
-                    <div class="info-icon">🎓</div>
+                    <div class="info-icon"><i class="fas fa-graduation-cap"></i></div>
                     <div class="info-content">
                         <h4>Role</h4>
                         <p><?php echo htmlspecialchars($user['role'] ?? 'Student'); ?></p>
                     </div>
                 </div>
                 <div class="info-item">
-                    <div class="info-icon">⚡</div>
+                    <div class="info-icon"><i class="fas fa-bolt"></i></div>
                     <div class="info-content">
                         <h4>Account Status</h4>
                         <p><?php echo htmlspecialchars($user['status'] ?? 'Active'); ?></p>
@@ -480,13 +482,15 @@ include 'assets/header.php';
         <!-- Notifications Section -->
         <?php if (!empty($notifications)): ?>
         <div class="section">
-            <h2>🔔 New Notifications</h2>
+            <h2><i class="fas fa-bell"></i> New Notifications</h2>
             <?php foreach ($notifications as $notification): ?>
-                <div class="notification-card" data-notification-id="<?php echo $notification['id']; ?>">
+                <div class="notification-card" data-notification-id="<?php echo $notification['id']; ?>" data-notification-type="<?php echo htmlspecialchars($notification['notification_type']); ?>">
                     <div class="notification-header">
                         <div class="notification-icon">
                             <?php if ($notification['notification_type'] === 'admin_reply'): ?>
                                 <i class="fas fa-reply" style="color: var(--primary-color);"></i>
+                            <?php elseif ($notification['notification_type'] === 'enrollment_accepted'): ?>
+                                <i class="fas fa-check-circle" style="color: #22c55e;"></i>
                             <?php else: ?>
                                 <i class="fas fa-bell" style="color: var(--secondary-color);"></i>
                             <?php endif; ?>
@@ -514,7 +518,7 @@ include 'assets/header.php';
             
             <?php if ($recommendations_data['total_count'] === 0): ?>
                 <div class="no-recommendations">
-                    <div class="no-recommendations-icon">🎯</div>
+                    <div class="no-recommendations-icon"><i class="fas fa-bullseye"></i></div>
                     <h3>Get Personalized Recommendations</h3>
                     <p>Complete your skill assessment to unlock AI-powered course, quiz, and career path recommendations tailored specifically for you!</p>
                     <a href="skill-assessment.php" class="cta-button">Take Skill Assessment</a>
@@ -523,7 +527,7 @@ include 'assets/header.php';
                 <!-- Course Recommendations -->
                 <?php if (!empty($recommendations_data['courses'])): ?>
                     <div class="recommendation-category">
-                        <h3><span class="category-icon">📚</span> Recommended Courses</h3>
+                        <h3><span class="category-icon"><i class="fas fa-book"></i></span> Recommended Courses</h3>
                         <div class="recommendations-grid">
                             <?php foreach ($recommendations_data['courses'] as $course): ?>
                                 <div class="recommendation-card course-recommendation">
@@ -542,13 +546,13 @@ include 'assets/header.php';
                                     
                                     <div class="recommendation-meta">
                                         <?php if ($course['level']): ?>
-                                            <span class="meta-item">📈 <?php echo htmlspecialchars($course['level']); ?></span>
+                                            <span class="meta-item"><i class="fas fa-chart-line"></i> <?php echo htmlspecialchars($course['level']); ?></span>
                                         <?php endif; ?>
                                         <?php if ($course['duration']): ?>
                                             <span class="meta-item">⏱️ <?php echo htmlspecialchars($course['duration']); ?></span>
                                         <?php endif; ?>
                                         <?php if ($course['price']): ?>
-                                            <span class="meta-item">💰 $<?php echo number_format($course['price'], 2); ?></span>
+                                            <span class="meta-item"><i class="fas fa-dollar-sign"></i> $<?php echo number_format($course['price'], 2); ?></span>
                                         <?php endif; ?>
                                     </div>
                                     
@@ -565,7 +569,7 @@ include 'assets/header.php';
                 <!-- Quiz Recommendations -->
                 <?php if (!empty($recommendations_data['quizzes'])): ?>
                     <div class="recommendation-category">
-                        <h3><span class="category-icon">🎯</span> Recommended Quizzes</h3>
+                        <h3><span class="category-icon"><i class="fas fa-bullseye"></i></span> Recommended Quizzes</h3>
                         <div class="recommendations-grid">
                             <?php foreach ($recommendations_data['quizzes'] as $quiz): ?>
                                 <div class="recommendation-card quiz-recommendation">
@@ -581,7 +585,7 @@ include 'assets/header.php';
                                     </p>
                                     
                                     <div class="recommendation-meta">
-                                        <span class="meta-item">📝 <?php echo ucfirst($quiz['quiz_category']); ?></span>
+                                        <span class="meta-item"><i class="fas fa-edit"></i> <?php echo ucfirst($quiz['quiz_category']); ?></span>
                                         <span class="meta-item">⭐ <?php echo ucfirst($quiz['difficulty_level']); ?></span>
                                         <?php if ($quiz['estimated_duration_minutes']): ?>
                                             <span class="meta-item">⏱️ <?php echo $quiz['estimated_duration_minutes']; ?> min</span>
@@ -600,7 +604,7 @@ include 'assets/header.php';
                 <!-- Career Path Recommendations -->
                 <?php if (!empty($recommendations_data['career_paths'])): ?>
                     <div class="recommendation-category">
-                        <h3><span class="category-icon">🚀</span> Career Path Guidance</h3>
+                        <h3><span class="category-icon"><i class="fas fa-rocket"></i></span> Career Path Guidance</h3>
                         <div class="recommendations-grid">
                             <?php foreach ($recommendations_data['career_paths'] as $career): ?>
                                 <div class="recommendation-card career-recommendation">
@@ -616,8 +620,8 @@ include 'assets/header.php';
                                     </p>
                                     
                                     <div class="recommendation-meta">
-                                        <span class="meta-item">🎯 <?php echo htmlspecialchars($career['target_role']); ?></span>
-                                        <span class="meta-item">🏢 <?php echo htmlspecialchars($career['industry']); ?></span>
+                                        <span class="meta-item"><i class="fas fa-bullseye"></i> <?php echo htmlspecialchars($career['target_role']); ?></span>
+                                        <span class="meta-item"><i class="fas fa-building"></i> <?php echo htmlspecialchars($career['industry']); ?></span>
                                         <?php if ($career['estimated_duration']): ?>
                                             <span class="meta-item">📅 <?php echo htmlspecialchars($career['estimated_duration']); ?></span>
                                         <?php endif; ?>
@@ -651,7 +655,7 @@ include 'assets/header.php';
             <h2>My Enrollments</h2>
             <?php if (empty($enrollments)): ?>
                 <div class="no-enrollments">
-                    <div class="no-enrollments-icon">📚</div>
+                    <div class="no-enrollments-icon"><i class="fas fa-book"></i></div>
                     <h3>No Enrollments Yet</h3>
                     <p>You haven't enrolled in any courses yet. Start your learning journey today!</p>
                     <a href="courses.php" class="cta-button">Browse Courses</a>
@@ -662,7 +666,13 @@ include 'assets/header.php';
                         <div class="enrollment-header">
                             <div>
                                 <div class="course-title">
-                                    <?php echo htmlspecialchars($enrollment['course_name'] ?: 'Course #' . $enrollment['course_id']); ?>
+                                    <?php 
+                                    $courseTitle = $enrollment['course_name'];
+                                    if (empty($courseTitle) || $courseTitle === 'General Course') {
+                                        $courseTitle = 'Professional Development Course';
+                                    }
+                                    echo htmlspecialchars($courseTitle); 
+                                    ?>
                                 </div>
                                 <?php if ($enrollment['instructor']): ?>
                                     <div class="course-instructor">Instructor: <?php echo htmlspecialchars($enrollment['instructor']); ?></div>
@@ -670,10 +680,26 @@ include 'assets/header.php';
                             </div>
                             <div class="status-badges">
                                 <span class="enrollment-status status-<?php echo strtolower($enrollment['status']); ?>">
-                                    <?php echo htmlspecialchars($enrollment['status']); ?>
+                                    <?php 
+                                    $statusText = ucfirst($enrollment['status']);
+                                    if ($enrollment['status'] === 'confirmed') {
+                                        $statusText = '<i class="fas fa-check-circle"></i> Accepted by Admin';
+                                    } elseif ($enrollment['status'] === 'pending') {
+                                        $statusText = '<i class="fas fa-clock"></i> Under Review';
+                                    }
+                                    echo $statusText;
+                                    ?>
                                 </span>
                                 <span class="admin-status status-<?php echo strtolower(str_replace(' ', '-', $enrollment['admin_status'])); ?>">
-                                    Admin: <?php echo htmlspecialchars($enrollment['admin_status']); ?>
+                                    <?php 
+                                    $adminStatusText = $enrollment['admin_status'];
+                                    if ($enrollment['admin_viewed'] == 1 || $enrollment['status'] === 'confirmed') {
+                                        $adminStatusText = '<i class="fas fa-eye"></i> Admin Reviewed';
+                                    } else {
+                                        $adminStatusText = '<i class="fas fa-clipboard"></i> ' . $adminStatusText;
+                                    }
+                                    echo $adminStatusText;
+                                    ?>
                                 </span>
                             </div>
                         </div>
@@ -811,82 +837,91 @@ include 'assets/header.php';
     </div>
 </div>
 
-<!-- Profile Edit Modal -->
+<!-- Profile Edit Modal with Tabs -->
 <div id="profileModal" class="modal">
-    <div class="modal-content">
+    <div class="modal-content modal-large">
         <div class="modal-header">
             <h3>Edit Profile</h3>
             <span class="close" onclick="closeModal('profileModal')">&times;</span>
         </div>
-        <form method="POST">
-            <div class="form-group">
-                <label for="fullname">Full Name</label>
-                <input type="text" id="fullname" name="fullname" value="<?php echo htmlspecialchars($user['fullname']); ?>" required>
-            </div>
-            <div class="form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($user['email']); ?>" required>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeModal('profileModal')">Cancel</button>
-                <button type="submit" name="update_profile" class="btn btn-primary">Update Profile</button>
-            </div>
-        </form>
+        
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button type="button" class="tab-btn active" onclick="switchTab(event, 'profile-info')">
+                <i class="fas fa-user"></i> Profile Info
+            </button>
+            <button type="button" class="tab-btn" onclick="switchTab(event, 'change-password')">
+                <i class="fas fa-lock"></i> Change Password
+            </button>
+            <button type="button" class="tab-btn" onclick="switchTab(event, 'change-picture')">
+                <i class="fas fa-camera"></i> Change Picture
+            </button>
+        </div>
+        
+        <!-- Profile Info Tab -->
+        <div id="profile-info" class="tab-content active">
+            <form method="POST">
+                <div class="form-group">
+                    <label for="fullname">Full Name</label>
+                    <input type="text" id="fullname" name="fullname" value="<?php echo htmlspecialchars($user['fullname']); ?>" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($user['email']); ?>" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('profileModal')">Cancel</button>
+                    <button type="submit" name="update_profile" class="btn btn-primary">Update Profile</button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Change Password Tab -->
+        <div id="change-password" class="tab-content">
+            <form method="POST">
+                <div class="form-group">
+                    <label for="current_password_tab">Current Password</label>
+                    <input type="password" id="current_password_tab" name="current_password" required>
+                </div>
+                <div class="form-group">
+                    <label for="new_password_tab">New Password</label>
+                    <input type="password" id="new_password_tab" name="new_password" minlength="6" required>
+                    <small class="form-hint">Password must be at least 6 characters long</small>
+                </div>
+                <div class="form-group">
+                    <label for="confirm_password_tab">Confirm New Password</label>
+                    <input type="password" id="confirm_password_tab" name="confirm_password" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('profileModal')">Cancel</button>
+                    <button type="submit" name="change_password" class="btn btn-primary">Change Password</button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Change Picture Tab -->
+        <div id="change-picture" class="tab-content">
+            <form method="POST" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="profile_picture_tab">Choose New Profile Picture</label>
+                    <input type="file" id="profile_picture_tab" name="profile_picture" accept="image/*" required>
+                    <small class="form-hint">Supported formats: JPG, PNG, GIF. Maximum size: 5MB</small>
+                </div>
+                <div class="profile-picture-preview" id="picturePreviewTab" style="display: none;">
+                    <img id="previewImageTab" src="" alt="Preview" style="max-width: 150px; max-height: 150px; border-radius: 50%; object-fit: cover; margin-top: 15px;">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('profileModal')">Cancel</button>
+                    <button type="submit" name="upload_profile_picture" class="btn btn-primary">Upload Picture</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
-<!-- Password Change Modal -->
-<div id="passwordModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Change Password</h3>
-            <span class="close" onclick="closeModal('passwordModal')">&times;</span>
-        </div>
-        <form method="POST">
-            <div class="form-group">
-                <label for="current_password">Current Password</label>
-                <input type="password" id="current_password" name="current_password" required>
-            </div>
-            <div class="form-group">
-                <label for="new_password">New Password</label>
-                <input type="password" id="new_password" name="new_password" minlength="6" required>
-                <small class="form-hint">Password must be at least 6 characters long</small>
-            </div>
-            <div class="form-group">
-                <label for="confirm_password">Confirm New Password</label>
-                <input type="password" id="confirm_password" name="confirm_password" required>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeModal('passwordModal')">Cancel</button>
-                <button type="submit" name="change_password" class="btn btn-primary">Change Password</button>
-            </div>
-        </form>
-    </div>
-</div>
 
-<!-- Profile Picture Change Modal -->
-<div id="pictureModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Change Profile Picture</h3>
-            <span class="close" onclick="closeModal('pictureModal')">&times;</span>
-        </div>
-        <form method="POST" enctype="multipart/form-data">
-            <div class="form-group">
-                <label for="profile_picture">Choose New Profile Picture</label>
-                <input type="file" id="profile_picture" name="profile_picture" accept="image/*" required>
-                <small class="form-hint">Supported formats: JPG, PNG, GIF. Maximum size: 5MB</small>
-            </div>
-            <div class="profile-picture-preview" id="picturePreview" style="display: none;">
-                <img id="previewImage" src="" alt="Preview" style="max-width: 150px; max-height: 150px; border-radius: 50%; object-fit: cover;">
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeModal('pictureModal')">Cancel</button>
-                <button type="submit" name="upload_profile_picture" class="btn btn-primary">Upload Picture</button>
-            </div>
-        </form>
-    </div>
-</div>
+
+
 
 <?php include 'assets/footer.php'; ?>
 
@@ -896,12 +931,34 @@ include 'assets/header.php';
 function openEditModal(type) {
     if (type === 'profile') {
         document.getElementById('profileModal').style.display = 'block';
-    } else if (type === 'password') {
-        document.getElementById('passwordModal').style.display = 'block';
-    } else if (type === 'picture') {
-        document.getElementById('pictureModal').style.display = 'block';
+        // Reset to first tab when opening
+        switchTab(null, 'profile-info');
     }
     document.body.style.overflow = 'hidden';
+}
+
+// Tab switching functionality
+function switchTab(event, tabName) {
+    // Remove active class from all tabs and tab buttons
+    const tabContents = document.getElementsByClassName('tab-content');
+    const tabBtns = document.getElementsByClassName('tab-btn');
+    
+    for (let i = 0; i < tabContents.length; i++) {
+        tabContents[i].classList.remove('active');
+    }
+    
+    for (let i = 0; i < tabBtns.length; i++) {
+        tabBtns[i].classList.remove('active');
+    }
+    
+    // Show the selected tab and mark button as active
+    document.getElementById(tabName).classList.add('active');
+    if (event) {
+        event.currentTarget.classList.add('active');
+    } else {
+        // If no event (called programmatically), find and activate the first tab
+        document.querySelector('.tab-btn').classList.add('active');
+    }
 }
 
 function closeModal(modalId) {
@@ -917,15 +974,20 @@ window.addEventListener('click', function(event) {
     }
 });
 
-// Confirm password validation
-document.getElementById('confirm_password').addEventListener('input', function() {
-    const newPassword = document.getElementById('new_password').value;
-    const confirmPassword = this.value;
-    
-    if (newPassword !== confirmPassword) {
-        this.setCustomValidity('Passwords do not match');
-    } else {
-        this.setCustomValidity('');
+// Confirm password validation for the new tab-based form
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmPasswordField = document.getElementById('confirm_password_tab');
+    if (confirmPasswordField) {
+        confirmPasswordField.addEventListener('input', function() {
+            const newPassword = document.getElementById('new_password_tab').value;
+            const confirmPassword = this.value;
+            
+            if (newPassword !== confirmPassword) {
+                this.setCustomValidity('Passwords do not match');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
     }
 });
 
@@ -940,18 +1002,23 @@ setTimeout(function() {
     });
 }, 5000);
 
-// Profile picture preview
-document.getElementById('profile_picture').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            document.getElementById('previewImage').src = e.target.result;
-            document.getElementById('picturePreview').style.display = 'block';
-        };
-        reader.readAsDataURL(file);
-    } else {
-        document.getElementById('picturePreview').style.display = 'none';
+// Profile picture preview for the new tab
+document.addEventListener('DOMContentLoaded', function() {
+    const profilePictureInput = document.getElementById('profile_picture_tab');
+    if (profilePictureInput) {
+        profilePictureInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('previewImageTab').src = e.target.result;
+                    document.getElementById('picturePreviewTab').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                document.getElementById('picturePreviewTab').style.display = 'none';
+            }
+        });
     }
 });
 

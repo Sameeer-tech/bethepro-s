@@ -1105,7 +1105,7 @@ include 'assets/header.php';
 
                         <div class="prep-card">
                             <div class="card-header">
-                                <div class="card-icon">🎯</div>
+                                <div class="card-icon"><i class="fas fa-bullseye"></i></div>
                                 <h3>Marketing Fundamentals</h3>
                             </div>
                             <div class="card-content">
@@ -1453,7 +1453,7 @@ include 'assets/header.php';
                     <div class="prep-cards">
                         <div class="prep-card">
                             <div class="card-header">
-                                <div class="card-icon">🎯</div>
+                                <div class="card-icon"><i class="fas fa-bullseye"></i></div>
                                 <h3>Recruitment Lifecycle</h3>
                             </div>
                             <div class="card-content">
@@ -1557,7 +1557,7 @@ include 'assets/header.php';
                     <div class="prep-cards">
                         <div class="prep-card">
                             <div class="card-header">
-                                <div class="card-icon">📚</div>
+                                <div class="card-icon"><i class="fas fa-book"></i></div>
                                 <h3>Employment Laws</h3>
                             </div>
                             <div class="card-content">
@@ -1913,7 +1913,7 @@ include 'assets/header.php';
 
                         <div class="prep-card">
                             <div class="card-header">
-                                <div class="card-icon">📚</div>
+                                <div class="card-icon"><i class="fas fa-book"></i></div>
                                 <h3>Behavioral Questions</h3>
                             </div>
                             <div class="card-content">

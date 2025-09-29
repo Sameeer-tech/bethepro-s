@@ -55,7 +55,7 @@ function showAddCourseForm() {
         '<div id="courseModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 1000;">' +
             '<div style="background: white; border-radius: 15px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">' +
                 '<div style="background: linear-gradient(135deg, #4a90e2, #357abd); color: white; padding: 25px; border-radius: 15px 15px 0 0; text-align: center;">' +
-                    '<h2 style="margin: 0; font-size: 24px; font-weight: 600;">📚 Add New Course</h2>' +
+                    '<h2 style="margin: 0; font-size: 24px; font-weight: 600;"><i class="fas fa-book"></i> Add New Course</h2>' +
                     '<p style="margin: 10px 0 0 0; opacity: 0.9;">Create a professional course for your students</p>' +
                 '</div>' +
                 '<div style="padding: 30px;">' +
@@ -83,7 +83,7 @@ function showAddCourseForm() {
                             '<option value="">Select Course Level</option>' +
                             '<option value="Beginner">🌱 Beginner Level - Perfect for newcomers</option>' +
                             '<option value="Intermediate">📈 Mid Level - For those with some experience</option>' +
-                            '<option value="Advanced">🎯 Expert Level - Advanced professionals</option>' +
+                            '<option value="Advanced"><i class="fas fa-bullseye"></i> Expert Level - Advanced professionals</option>' +
                         '</select>' +
                     '</div>' +
                     '<div style="margin-bottom: 25px;">' +
@@ -186,7 +186,7 @@ function saveCourse() {
 
 function showProfessionalAlert(message, type) {
     var alertColor = type === 'success' ? 'linear-gradient(135deg, #28a745, #20c997)' : 'linear-gradient(135deg, #dc3545, #e83e8c)';
-    var icon = type === 'success' ? '✅' : '⚠️';
+    var icon = type === 'success' ? '<i class="fas fa-check-circle"></i>' : '<i class="fas fa-exclamation-triangle"></i>';
     
     var alertHTML = 
         '<div id="professionalAlert" style="position: fixed; top: 20px; right: 20px; background: ' + alertColor + '; color: white; padding: 20px 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 2000; max-width: 400px; transform: translateX(500px); transition: all 0.5s ease;">' +
@@ -312,7 +312,7 @@ function showEditCourseForm(courseId, courseData) {
                         '<select id="editCourseLevel" style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 16px; box-sizing: border-box; background: white;" required>' +
                             '<option value="Beginner"' + (courseData.level === 'Beginner' ? ' selected' : '') + '>🌱 Beginner Level</option>' +
                             '<option value="Intermediate"' + (courseData.level === 'Intermediate' ? ' selected' : '') + '>📈 Mid Level</option>' +
-                            '<option value="Advanced"' + (courseData.level === 'Advanced' ? ' selected' : '') + '>🎯 Expert Level</option>' +
+                            '<option value="Advanced"' + (courseData.level === 'Advanced' ? ' selected' : '') + '><i class="fas fa-bullseye"></i> Expert Level</option>' +
                         '</select>' +
                     '</div>' +
                     '<div style="margin-bottom: 25px;">' +
@@ -348,12 +348,12 @@ function updateCourse(courseId) {
     
     // Validation
     if (!title || !description || !price || !duration || !features) {
-        showProfessionalAlert('❌ Please fill in all required fields.', 'error');
+        showProfessionalAlert('<i class="fas fa-times-circle"></i> Please fill in all required fields.', 'error');
         return;
     }
     
     if (parseFloat(price) < 0) {
-        showProfessionalAlert('❌ Price cannot be negative.', 'error');
+        showProfessionalAlert('<i class="fas fa-times-circle"></i> Price cannot be negative.', 'error');
         return;
     }
     
@@ -382,7 +382,7 @@ function updateCourse(courseId) {
                     }, 2000);
                 }
             } else {
-                showProfessionalAlert('❌ Error updating course. Please try again.', 'error');
+                showProfessionalAlert('<i class="fas fa-times-circle"></i> Error updating course. Please try again.', 'error');
             }
         }
     };
@@ -459,7 +459,7 @@ function confirmDeleteCourse(courseId) {
                     }, 2000);
                 }
             } else {
-                showProfessionalAlert('❌ Error deleting course. Please try again.', 'error');
+                showProfessionalAlert('<i class="fas fa-times-circle"></i> Error deleting course. Please try again.', 'error');
             }
         }
     };

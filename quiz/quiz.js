@@ -632,7 +632,7 @@ function submitQuiz() {
         </button>
         <button onclick="closeQuizModal()" 
                 style="background: #6c757d; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 1rem;">
-          📚 Choose Another Quiz
+          <i class="fas fa-book"></i> Choose Another Quiz
         </button>
       </div>
     </div>
@@ -643,13 +643,13 @@ function submitQuiz() {
     resultHtml += `
       <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
         <h5 style="color: #dc3545; margin-bottom: 20px; font-size: 1.2rem;">
-          📚 Review Your Mistakes (${wrongAnswers.length})
+          <i class="fas fa-book"></i> Review Your Mistakes (${wrongAnswers.length})
         </h5>
         <div style="max-height: 400px; overflow-y: auto;">
           ${wrongAnswers.map(item => `
             <div style="border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: #f8f9fa;">
               <div style="font-weight: 600; color: #dc3545; margin-bottom: 10px;">
-                ❌ Question ${item.questionNumber}
+                <i class="fas fa-times-circle"></i> Question ${item.questionNumber}
               </div>
               <div style="margin-bottom: 15px; font-size: 1rem; color: #333;">
                 ${item.question}

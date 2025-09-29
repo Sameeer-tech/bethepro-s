@@ -33,11 +33,11 @@ include 'assets/header.php';
                 <p>Have questions about our courses or services? Our dedicated team is here to help you achieve your career goals through personalized interview preparation guidance.</p>
                 <div class="hero-highlights">
                     <div class="highlight-item">
-                        <span class="highlight-icon">⚡</span>
+                        <span class="highlight-icon"><i class="fas fa-bolt"></i></span>
                         <span class="highlight-text">24/7 Support</span>
                     </div>
                     <div class="highlight-item">
-                        <span class="highlight-icon">🎯</span>
+                        <span class="highlight-icon"><i class="fas fa-bullseye"></i></span>
                         <span class="highlight-text">Expert Guidance</span>
                     </div>
                     <div class="highlight-item">
@@ -59,7 +59,7 @@ include 'assets/header.php';
                     <p>Fill out the form or reach out to us directly through the information below.</p>
                     
                     <div class="contact-method">
-                        <div class="contact-icon">📧</div>
+                        <div class="contact-icon"><i class="fas fa-envelope"></i></div>
                         <div>
                             <h3>Email Us</h3>
                             <p>support@bethepros.com</p>
@@ -67,7 +67,7 @@ include 'assets/header.php';
                     </div>
                     
                     <div class="contact-method">
-                        <div class="contact-icon">📞</div>
+                        <div class="contact-icon"><i class="fas fa-phone"></i></div>
                         <div>
                             <h3>Call Us</h3>
                             <p>+1 (555) 123-4567</p>
@@ -75,7 +75,7 @@ include 'assets/header.php';
                     </div>
                     
                     <div class="contact-method">
-                        <div class="contact-icon">📍</div>
+                        <div class="contact-icon"><i class="fas fa-map-marker-alt"></i></div>
                         <div>
                             <h3>Visit Us</h3>
                             <p>123 Success Ave, Suite 500<br>San Francisco, CA 94107</p>
@@ -262,7 +262,7 @@ include 'assets/header.php';
                     alertMessage.className = 'custom-alert';
                     alertMessage.innerHTML = `
                         <div class="alert-content">
-                            <h3>🔐 Login Required</h3>
+                            <h3><i class="fas fa-lock"></i> Login Required</h3>
                             <p>You need to be logged in to send messages. Please log in or create an account to continue.</p>
                             <div class="alert-buttons">
                                 <a href="login.php" class="primary-btn">

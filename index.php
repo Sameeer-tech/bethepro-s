@@ -1,16 +1,41 @@
 <?php
+/**
+ * BeThePro's Homepage - Main Landing Page
+ * 
+ * This is the main entry point for visitors to the BeThePro's platform.
+ * It showcases available courses, features, and provides navigation to
+ * key sections like enrollment, login, and contact information.
+ * 
+ * FEATURES:
+ * - Hero section with call-to-action
+ * - Course overview and pricing
+ * - User testimonials and success stories
+ * - Easy navigation to enrollment and login
+ * - Responsive design for all devices
+ * 
+ * @author BeThePro Development Team
+ * @version 2.0
+ * @since 2025-09-25
+ */
+
+// Start session to track user login status
 session_start();
 ?>
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <!-- Basic Meta Information -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BeThePro's - Master Your Interview Success</title>
-    <link rel="stylesheet" href="css/style.css"/>
-    <link rel="stylesheet" href="css/animations.css"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" integrity="sha512-c42qTSw/wPZ3/5LBzD+Bw5f7bSF2oxou6wEb+I/lqeaKV5FDIfMvvRp772y4jcJLKuGUOpbJMdg/BTl50fJYAw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <!-- Custom Stylesheets -->
+    <link rel="stylesheet" href="css/style.css"/>          <!-- Main site styling -->
+    <link rel="stylesheet" href="css/animations.css"/>     <!-- Loading animations -->
+    
+    <!-- External Libraries -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">  <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" integrity="sha512-c42qTSw/wPZ3/5LBzD+Bw5f7bSF2oxou6wEb+I/lqeaKV5FDIfMvvRp772y4jcJLKuGUOpbJMdg/BTl50fJYAw==" crossorigin="anonymous" referrerpolicy="no-referrer" />  <!-- Animations -->
  
     <style>
         .alert {
@@ -139,7 +164,7 @@ if(isset($_SESSION['login_success'])): ?>
         <h2 class="section-title animate-slide-up">Why Choose BeThePro's?</h2>
         <div class="features-grid">
           <div class="feature-card animate-scale-in">
-            <div class="feature-icon">🎯</div>
+            <div class="feature-icon"><i class="fas fa-bullseye"></i></div>
             <h3>Targeted Preparation</h3>
             <p>
               Customized content for different fields and professions. Get

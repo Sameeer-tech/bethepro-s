@@ -239,7 +239,7 @@ include 'assets/header.php';
             
             <?php if (empty($course_recommendations)): ?>
                 <div class="no-recommendations">
-                    <div class="no-recommendations-icon">🎯</div>
+                    <div class="no-recommendations-icon"><i class="fas fa-bullseye"></i></div>
                     <h3>No Course Recommendations Yet</h3>
                     <p>Complete your skills assessment to get personalized course recommendations</p>
                     <a href="skill-assessment.php" class="btn btn-primary">Take Assessment</a>
@@ -383,7 +383,7 @@ include 'assets/header.php';
             
             <?php if (empty($career_recommendations)): ?>
                 <div class="no-recommendations">
-                    <div class="no-recommendations-icon">🚀</div>
+                    <div class="no-recommendations-icon"><i class="fas fa-rocket"></i></div>
                     <h3>No Career Path Recommendations Yet</h3>
                     <p>Complete your career goals to get personalized path suggestions</p>
                 </div>

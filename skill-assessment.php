@@ -847,7 +847,7 @@ const encouragementMessages = [
     "Great progress! You're doing amazing! 🎉",
     "Looking good! Keep it up! 💪",
     "Awesome! You're almost there! 🌟",
-    "Fantastic! Ready for your recommendations! 🚀"
+    "Fantastic! Ready for your recommendations! <i class='fas fa-rocket'></i>"
 ];
 
 function showEncouragement() {

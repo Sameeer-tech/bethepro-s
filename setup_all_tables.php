@@ -67,7 +67,7 @@ try {
         additional_services JSON NULL,
         newsletter_subscription BOOLEAN DEFAULT FALSE,
         enrollment_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-        status ENUM('pending', 'confirmed', 'active', 'completed', 'cancelled') DEFAULT 'pending',
+        status ENUM('pending', 'confirmed', 'rejected', 'active', 'completed', 'cancelled') DEFAULT 'pending',
         payment_status ENUM('pending', 'completed', 'failed', 'refunded') DEFAULT 'pending',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

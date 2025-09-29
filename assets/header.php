@@ -669,6 +669,14 @@ nav {
         padding: 0 20px;
     }
 }
+
+
+
+
+
+
+
+
 </style>
 
 
@@ -686,9 +694,11 @@ nav {
                     if (file_exists($basePath . 'config/database.php')) {
                         require_once $basePath . 'config/database.php';
                         if (isset($pdo)) {
-                            require_once $basePath . 'includes/NotificationSystem.php';
-                            $notificationSystem = new NotificationSystem($pdo);
-                            $unread_count = $notificationSystem->getUnreadCount($_SESSION['user_id']);
+                            // Simple unread count query
+                            $unread_stmt = $pdo->prepare("SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND is_read = 0");
+                            $unread_stmt->execute([$_SESSION['user_id']]);
+                            $unread_result = $unread_stmt->fetch(PDO::FETCH_ASSOC);
+                            $unread_count = $unread_result['count'] ?? 0;
                         }
                     }
                 } catch (Exception $e) {
@@ -884,6 +894,8 @@ document.addEventListener('DOMContentLoaded', function() {
             closeSidebar();
         }
     });
+
+
 });
 </script>
 

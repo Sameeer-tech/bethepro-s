@@ -108,7 +108,7 @@
 }
 
 .course-image.interview-prep::after {
-    content: '🎯';
+    content: '\f1e5';
     position: absolute;
     top: 50%;
     left: 50%;
@@ -168,7 +168,7 @@
 }
 
 .course-image.advanced::after {
-    content: '🚀';
+    content: '\f135';
     position: absolute;
     top: 50%;
     left: 50%;

@@ -52,6 +52,22 @@ try {
     $enrollments = [];
 }
 
+// Get admin notifications from database
+$admin_notifications = [];
+$unread_notifications_count = 0;
+try {
+    $stmt = $pdo->query("SELECT * FROM admin_notifications ORDER BY created_at DESC LIMIT 50");
+    $admin_notifications = $stmt->fetchAll();
+    
+    $unread_stmt = $pdo->query("SELECT COUNT(*) as unread_count FROM admin_notifications WHERE is_read = 0");
+    $unread_result = $unread_stmt->fetch();
+    $unread_notifications_count = $unread_result['unread_count'];
+} catch (PDOException $e) {
+    // If table doesn't exist or database error, use empty array
+    $admin_notifications = [];
+    $unread_notifications_count = 0;
+}
+
 // Update stats with real data
 $user_count = count($users);
 $active_users = count(array_filter($users, function($user) { return $user['status'] === 'Active'; }));
@@ -122,6 +138,15 @@ $recent_enrollments = $enrollments;
                     <a href="#" class="nav-link" data-section="messages">
                         <i class="fas fa-envelope"></i>
                         <span>Messages</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="#" class="nav-link" data-section="notifications">
+                        <i class="fas fa-bell"></i>
+                        <span>Notifications</span>
+                        <?php if ($unread_notifications_count > 0): ?>
+                            <span class="notification-badge"><?php echo $unread_notifications_count; ?></span>
+                        <?php endif; ?>
                     </a>
                 </div>
                 <div class="nav-item">
@@ -444,7 +469,7 @@ $recent_enrollments = $enrollments;
                                 </tr>
                                 <?php else: ?>
                                 <?php foreach ($recent_enrollments as $enrollment): ?>
-                                <tr>
+                                <tr data-enrollment-id="<?php echo htmlspecialchars($enrollment['enrollment_id']); ?>">
                                     <td><?php echo htmlspecialchars($enrollment['enrollment_id']); ?></td>
                                     <td><?php echo htmlspecialchars($enrollment['first_name'] . ' ' . $enrollment['last_name']); ?></td>
                                     <td><?php echo htmlspecialchars($enrollment['email']); ?></td>
@@ -454,7 +479,7 @@ $recent_enrollments = $enrollments;
                                     <td><?php echo date('M j, Y', strtotime($enrollment['enrollment_date'])); ?></td>
                                     <td><span class="status-badge status-<?php echo strtolower($enrollment['status']); ?>"><?php echo ucfirst($enrollment['status']); ?></span></td>
                                     <td>
-                                        <button class="btn btn-secondary" style="padding: 0.5rem;" 
+                                        <button class="btn btn-secondary" style="padding: 0.5rem; margin-right: 5px;" 
                                                 onclick="showEnrollmentDetails({
                                                     id: '<?php echo htmlspecialchars($enrollment['enrollment_id']); ?>',
                                                     firstName: '<?php echo htmlspecialchars($enrollment['first_name']); ?>',
@@ -471,6 +496,26 @@ $recent_enrollments = $enrollments;
                                                 title="View Details">
                                             <i class="fas fa-eye"></i>
                                         </button>
+                                        <?php if ($enrollment['status'] === 'pending'): ?>
+                                        <button class="btn btn-primary" style="padding: 0.5rem; background: #28a745; border-color: #28a745; margin-right: 0.5rem;" 
+                                                onclick="acceptEnrollment('<?php echo htmlspecialchars($enrollment['enrollment_id']); ?>', '<?php echo htmlspecialchars($enrollment['first_name'] . ' ' . $enrollment['last_name']); ?>')" 
+                                                title="Accept Enrollment">
+                                            <i class="fas fa-check"></i> Accept
+                                        </button>
+                                        <button class="btn btn-danger" style="padding: 0.5rem; background: #dc3545; border-color: #dc3545;" 
+                                                onclick="rejectEnrollment('<?php echo htmlspecialchars($enrollment['enrollment_id']); ?>', '<?php echo htmlspecialchars($enrollment['first_name'] . ' ' . $enrollment['last_name']); ?>')" 
+                                                title="Reject Enrollment">
+                                            <i class="fas fa-times"></i> Reject
+                                        </button>
+                                        <?php elseif ($enrollment['status'] === 'confirmed'): ?>
+                                        <span class="status-badge" style="background: #28a745; color: white; padding: 0.3rem 0.6rem; border-radius: 3px;">
+                                            <i class="fas fa-check-circle"></i> Accepted
+                                        </span>
+                                        <?php elseif ($enrollment['status'] === 'rejected'): ?>
+                                        <span class="status-badge" style="background: #dc3545; color: white; padding: 0.3rem 0.6rem; border-radius: 3px;">
+                                            <i class="fas fa-times-circle"></i> Rejected
+                                        </span>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -545,6 +590,75 @@ $recent_enrollments = $enrollments;
                                 <?php endif; ?>
                             </tbody>
                         </table>
+                    </div>
+                </section>
+
+                <!-- Notifications Section -->
+                <section id="notifications" class="content-section">
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-bell"></i>
+                                Admin Notifications
+                                <?php if ($unread_notifications_count > 0): ?>
+                                    <span class="notification-count">(<?php echo $unread_notifications_count; ?> unread)</span>
+                                <?php endif; ?>
+                            </h3>
+                            <div class="card-actions">
+                                <button class="btn btn-primary" onclick="markAllNotificationsRead()">
+                                    <i class="fas fa-check-double"></i>
+                                    Mark All Read
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="notifications-container">
+                            <?php if (!empty($admin_notifications)): ?>
+                                <?php foreach ($admin_notifications as $notification): ?>
+                                    <div class="notification-item <?php echo $notification['is_read'] ? 'read' : 'unread'; ?>" data-notification-id="<?php echo $notification['id']; ?>">
+                                        <div class="notification-icon">
+                                            <?php if ($notification['notification_type'] === 'new_enrollment'): ?>
+                                                <i class="fas fa-user-plus"></i>
+                                            <?php elseif ($notification['notification_type'] === 'enrollment_accepted'): ?>
+                                                <i class="fas fa-check-circle"></i>
+                                            <?php elseif ($notification['notification_type'] === 'enrollment_rejected'): ?>
+                                                <i class="fas fa-times-circle"></i>
+                                            <?php else: ?>
+                                                <i class="fas fa-bell"></i>
+                                            <?php endif; ?>
+                                        </div>
+                                        <div class="notification-content">
+                                            <div class="notification-header">
+                                                <h4><?php echo htmlspecialchars($notification['title']); ?></h4>
+                                                <span class="notification-time"><?php echo date('M j, Y g:i A', strtotime($notification['created_at'])); ?></span>
+                                            </div>
+                                            <p><?php echo htmlspecialchars($notification['message']); ?></p>
+                                            <?php if ($notification['enrollment_id']): ?>
+                                                <div class="notification-actions">
+                                                    <button class="btn btn-sm btn-primary" onclick="viewEnrollment('<?php echo $notification['enrollment_id']; ?>')">
+                                                        <i class="fas fa-eye"></i>
+                                                        View Enrollment
+                                                    </button>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                        <?php if (!$notification['is_read']): ?>
+                                            <div class="notification-badge">
+                                                <button class="btn btn-sm" onclick="markNotificationRead(<?php echo $notification['id']; ?>)">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <div class="empty-state">
+                                    <i class="fas fa-bell-slash"></i>
+                                    <h3>No Notifications</h3>
+                                    <p>All notifications will appear here.</p>
+                                </div>
+                            <?php endif; ?>
+                        </div>
                     </div>
                 </section>
 
@@ -978,7 +1092,9 @@ $recent_enrollments = $enrollments;
                 background: linear-gradient(135deg, #138496, #0e6674);
                 transform: translateY(-1px);
             }
-            </style>
+        </style>
+        `;
+
         // Course Management Functions
         function showAddCourseForm() {
             const formHtml = `
@@ -1112,7 +1228,235 @@ $recent_enrollments = $enrollments;
             }
         }
 
-        `;
+        // Accept Enrollment Function - Make sure it's in global scope
+        window.acceptEnrollment = function(enrollmentId, studentName) {
+            console.log('Accept enrollment called:', enrollmentId, studentName);
+            
+            if (confirm(`Accept enrollment for ${studentName}?\n\nThis will update the status to 'Accepted' and notify the student.`)) {
+                
+                // Show loading state
+                const button = event.target;
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                button.disabled = true;
+                
+                console.log('Sending request to message_actions.php');
+                
+                fetch('message_actions.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `action=accept_enrollment&enrollment_id=${encodeURIComponent(enrollmentId)}`
+                })
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.text();
+                })
+                .then(text => {
+                    console.log('Raw response:', text);
+                    try {
+                        const data = JSON.parse(text);
+                        console.log('Parsed data:', data);
+                        
+                        if (data.success) {
+                            showNotification(`Enrollment for ${studentName} has been accepted!`, 'success');
+                            
+                            // Update button appearance
+                            button.innerHTML = '<i class="fas fa-check-circle"></i> Accepted';
+                            button.style.background = '#28a745';
+                            button.style.borderColor = '#28a745';
+                            button.disabled = true;
+                            
+                            // Refresh after 2 seconds
+                            setTimeout(() => location.reload(), 2000);
+                        } else {
+                            throw new Error(data.message || 'Unknown error occurred');
+                        }
+                    } catch (parseError) {
+                        console.error('JSON parse error:', parseError);
+                        throw new Error('Invalid response from server: ' + text);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('Error accepting enrollment: ' + error.message, 'error');
+                    
+                    // Restore button
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                });
+            }
+        }
+        
+        // Reject Enrollment Function
+        window.rejectEnrollment = function(enrollmentId, studentName) {
+            console.log('Reject enrollment called:', enrollmentId, studentName);
+            
+            if (confirm(`Reject enrollment for ${studentName}?\n\nThis will update the status to 'Rejected' and notify the student.`)) {
+                
+                // Show loading state
+                const button = event.target;
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                button.disabled = true;
+                
+                console.log('Sending reject request to message_actions.php');
+                
+                fetch('message_actions.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `action=reject_enrollment&enrollment_id=${encodeURIComponent(enrollmentId)}`
+                })
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.text();
+                })
+                .then(text => {
+                    console.log('Raw response:', text);
+                    try {
+                        const data = JSON.parse(text);
+                        console.log('Parsed data:', data);
+                        
+                        if (data.success) {
+                            showNotification(`Enrollment for ${studentName} has been rejected!`, 'success');
+                            
+                            // Update button appearance
+                            button.innerHTML = '<i class="fas fa-times-circle"></i> Rejected';
+                            button.style.background = '#dc3545';
+                            button.style.borderColor = '#dc3545';
+                            button.disabled = true;
+                            
+                            // Refresh after 2 seconds
+                            setTimeout(() => location.reload(), 2000);
+                        } else {
+                            throw new Error(data.message || 'Unknown error occurred');
+                        }
+                    } catch (parseError) {
+                        console.error('JSON parse error:', parseError);
+                        throw new Error('Invalid response from server: ' + text);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('Error rejecting enrollment: ' + error.message, 'error');
+                    
+                    // Restore button
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                });
+            }
+        }
+        
+        // Notification Management Functions
+        function markNotificationRead(notificationId) {
+            fetch('message_actions.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `action=mark_notification_read&notification_id=${notificationId}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const notificationElement = document.querySelector(`[data-notification-id="${notificationId}"]`);
+                    if (notificationElement) {
+                        notificationElement.classList.remove('unread');
+                        notificationElement.classList.add('read');
+                        const badge = notificationElement.querySelector('.notification-badge');
+                        if (badge) badge.remove();
+                    }
+                    updateNotificationBadge();
+                    showNotification('Notification marked as read', 'success');
+                } else {
+                    showNotification('Error marking notification as read', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Error marking notification as read', 'error');
+            });
+        }
+        
+        function markAllNotificationsRead() {
+            if (confirm('Mark all notifications as read?')) {
+                fetch('message_actions.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'action=mark_all_notifications_read'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload(); // Refresh to update UI
+                    } else {
+                        showNotification('Error marking notifications as read', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('Error marking notifications as read', 'error');
+                });
+            }
+        }
+        
+        function viewEnrollment(enrollmentId) {
+            // Switch to enrollments tab and highlight the enrollment
+            showSection('enrollments');
+            
+            // Highlight the specific enrollment
+            setTimeout(() => {
+                const enrollmentRows = document.querySelectorAll(`tr[data-enrollment-id="${enrollmentId}"]`);
+                if (enrollmentRows.length > 0) {
+                    enrollmentRows[0].style.background = '#fff3cd';
+                    enrollmentRows[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 100);
+        }
+        
+        function showSection(sectionName) {
+            // Hide all sections
+            const sections = document.querySelectorAll('.content-section');
+            sections.forEach(section => section.classList.remove('active'));
+            
+            // Show target section
+            const targetSection = document.getElementById(sectionName);
+            if (targetSection) {
+                targetSection.classList.add('active');
+            }
+            
+            // Update navigation
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => link.classList.remove('active'));
+            
+            const targetNavLink = document.querySelector(`[data-section="${sectionName}"]`);
+            if (targetNavLink) {
+                targetNavLink.classList.add('active');
+            }
+            
+            // Update page title
+            const pageTitle = document.getElementById('pageTitle');
+            if (pageTitle && targetNavLink) {
+                pageTitle.textContent = targetNavLink.textContent.trim();
+            }
+        }
+        
+        function updateNotificationBadge() {
+            // Update notification badge count
+            const unreadCount = document.querySelectorAll('.notification-item.unread').length;
+            const badge = document.querySelector('.notification-badge');
+            if (badge) {
+                if (unreadCount > 0) {
+                    badge.textContent = unreadCount;
+                } else {
+                    badge.remove();
+                }
+            }
+        }
+
         document.head.insertAdjacentHTML('beforeend', modalStyles);
     </script>
     <!-- Professional Enrollment Details Modal -->
@@ -1226,17 +1570,95 @@ $recent_enrollments = $enrollments;
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert('✅ ' + data.message);
+                    alert('<i class="fas fa-check-circle"></i> ' + data.message);
                     closeReplyModal();
                     location.reload();
                 } else {
-                    alert('❌ ' + data.message);
+                    alert('<i class="fas fa-times-circle"></i> ' + data.message);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('❌ An error occurred while sending the reply');
+                alert('<i class="fas fa-times-circle"></i> An error occurred while sending the reply');
             });
+        }
+        
+        // Notification Management Functions
+        function markNotificationRead(notificationId) {
+            fetch('message_actions.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `action=mark_notification_read&notification_id=${notificationId}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const notificationElement = document.querySelector(`[data-notification-id="${notificationId}"]`);
+                    if (notificationElement) {
+                        notificationElement.classList.remove('unread');
+                        notificationElement.classList.add('read');
+                        const badge = notificationElement.querySelector('.notification-badge');
+                        if (badge) badge.remove();
+                    }
+                    updateNotificationBadge();
+                    showNotification('Notification marked as read', 'success');
+                } else {
+                    showNotification('Error marking notification as read', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Error marking notification as read', 'error');
+            });
+        }
+        
+        function markAllNotificationsRead() {
+            if (confirm('Mark all notifications as read?')) {
+                fetch('message_actions.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'action=mark_all_notifications_read'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload(); // Refresh to update UI
+                    } else {
+                        showNotification('Error marking notifications as read', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('Error marking notifications as read', 'error');
+                });
+            }
+        }
+        
+        function viewEnrollment(enrollmentId) {
+            // Switch to enrollments tab and highlight the enrollment
+            showSection('enrollments');
+            
+            // Highlight the specific enrollment
+            setTimeout(() => {
+                const enrollmentRows = document.querySelectorAll(`tr[data-enrollment-id="${enrollmentId}"]`);
+                if (enrollmentRows.length > 0) {
+                    enrollmentRows[0].style.background = '#fff3cd';
+                    enrollmentRows[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 100);
+        }
+        
+        function updateNotificationBadge() {
+            // Update notification badge count
+            const unreadCount = document.querySelectorAll('.notification-item.unread').length;
+            const badge = document.querySelector('.notification-badge');
+            if (badge) {
+                if (unreadCount > 0) {
+                    badge.textContent = unreadCount;
+                } else {
+                    badge.remove();
+                }
+            }
         }
     </script>
 </body>

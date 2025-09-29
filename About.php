@@ -201,8 +201,8 @@ include 'assets/header.php';
                             </ul>
                             <div class="course-meta">
                                 <span class="duration">⏱️ 4 weeks</span>
-                                <span class="level">📊 Beginner</span>
-                                <span class="price">💰 $99</span>
+                                <span class="level"><i class="fas fa-chart-bar"></i> Beginner</span>
+                                <span class="price"><i class="fas fa-dollar-sign"></i> $99</span>
                             </div>
                         </div>
                         
@@ -217,8 +217,8 @@ include 'assets/header.php';
                             </ul>
                             <div class="course-meta">
                                 <span class="duration">⏱️ 6 weeks</span>
-                                <span class="level">📊 Intermediate</span>
-                                <span class="price">💰 $149</span>
+                                <span class="level"><i class="fas fa-chart-bar"></i> Intermediate</span>
+                                <span class="price"><i class="fas fa-dollar-sign"></i> $149</span>
                             </div>
                         </div>
                         
@@ -233,8 +233,8 @@ include 'assets/header.php';
                             </ul>
                             <div class="course-meta">
                                 <span class="duration">⏱️ 8 weeks</span>
-                                <span class="level">📊 Advanced</span>
-                                <span class="price">💰 $199</span>
+                                <span class="level"><i class="fas fa-chart-bar"></i> Advanced</span>
+                                <span class="price"><i class="fas fa-dollar-sign"></i> $199</span>
                             </div>
                         </div>
                     </div>
@@ -258,8 +258,8 @@ include 'assets/header.php';
                             </ul>
                             <div class="course-meta">
                                 <span class="duration">⏱️ 5 weeks</span>
-                                <span class="level">📊 Intermediate</span>
-                                <span class="price">💰 $129</span>
+                                <span class="level"><i class="fas fa-chart-bar"></i> Intermediate</span>
+                                <span class="price"><i class="fas fa-dollar-sign"></i> $129</span>
                             </div>
                         </div>
                         
@@ -274,8 +274,8 @@ include 'assets/header.php';
                             </ul>
                             <div class="course-meta">
                                 <span class="duration">⏱️ 4 weeks</span>
-                                <span class="level">📊 Beginner</span>
-                                <span class="price">💰 $119</span>
+                                <span class="level"><i class="fas fa-chart-bar"></i> Beginner</span>
+                                <span class="price"><i class="fas fa-dollar-sign"></i> $119</span>
                             </div>
                         </div>
                         
@@ -290,8 +290,8 @@ include 'assets/header.php';
                             </ul>
                             <div class="course-meta">
                                 <span class="duration">⏱️ 3 weeks</span>
-                                <span class="level">📊 Beginner</span>
-                                <span class="price">💰 $89</span>
+                                <span class="level"><i class="fas fa-chart-bar"></i> Beginner</span>
+                                <span class="price"><i class="fas fa-dollar-sign"></i> $89</span>
                             </div>
                         </div>
                     </div>

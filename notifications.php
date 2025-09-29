@@ -1,8 +1,6 @@
 <?php
 session_start();
 require_once 'config/database.php';
-require_once 'includes/NotificationSystem.php';
-include 'assets/loader.php';
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
@@ -11,110 +9,114 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $user_id = $_SESSION['user_id'];
-$notificationSystem = new NotificationSystem($pdo);
 
-// Handle notification actions
-if ($_POST) {
-    if (isset($_POST['action'])) {
-        $notification_id = isset($_POST['notification_id']) ? (int)$_POST['notification_id'] : 0;
-        
-        switch ($_POST['action']) {
-            case 'mark_read':
-                $notificationSystem->markAsRead($notification_id, $user_id);
-                break;
-            case 'dismiss':
-                $notificationSystem->dismissNotification($notification_id, $user_id);
-                break;
-            case 'mark_all_read':
-                // Mark all unread notifications as read
-                try {
-                    $stmt = $pdo->prepare("
-                        UPDATE user_notifications 
-                        SET is_read = TRUE, read_at = NOW() 
-                        WHERE user_id = ? AND is_read = FALSE
-                    ");
-                    $stmt->execute([$user_id]);
-                } catch (PDOException $e) {
-                    error_log("Error marking all as read: " . $e->getMessage());
-                }
-                break;
-        }
-        
-        // Redirect to prevent form resubmission
-        header("Location: notifications.php");
-        exit();
+// Handle mark as read action
+if (isset($_POST['mark_read']) && isset($_POST['notification_id'])) {
+    try {
+        $stmt = $pdo->prepare("UPDATE user_notifications SET is_read = 1, read_at = NOW() WHERE id = ? AND user_id = ?");
+        $stmt->execute([$_POST['notification_id'], $user_id]);
+    } catch (PDOException $e) {
+        error_log("Error marking notification as read: " . $e->getMessage());
     }
+    header("Location: notifications.php");
+    exit();
 }
 
-// Generate fresh notifications for the user
-$notificationSystem->generateUserNotifications($user_id);
-
-// Get notifications
-$recent_notifications = $notificationSystem->getRecentNotifications($user_id, 50);
-$unread_count = $notificationSystem->getUnreadCount($user_id);
-
-// Group notifications by type
-$grouped_notifications = [];
-foreach ($recent_notifications as $notification) {
-    $type = $notification['notification_type'];
-    if (!isset($grouped_notifications[$type])) {
-        $grouped_notifications[$type] = [];
+// Handle mark all as read action
+if (isset($_POST['mark_all_read'])) {
+    try {
+        $stmt = $pdo->prepare("UPDATE user_notifications SET is_read = 1, read_at = NOW() WHERE user_id = ? AND is_read = 0");
+        $stmt->execute([$user_id]);
+    } catch (PDOException $e) {
+        error_log("Error marking all notifications as read: " . $e->getMessage());
     }
-    $grouped_notifications[$type][] = $notification;
+    header("Location: notifications.php");
+    exit();
 }
 
-// Get user info for header
+// Get user notifications
+$notifications = [];
+$unread_count = 0;
+
 try {
-    $stmt = $pdo->prepare("SELECT name FROM users WHERE id = ?");
+    // Get all user notifications ordered by newest first
+    $stmt = $pdo->prepare("SELECT * FROM user_notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50");
     $stmt->execute([$user_id]);
-    $user = $stmt->fetch();
-    $user_name = $user ? $user['name'] : 'User';
+    $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Get unread count
+    $unread_stmt = $pdo->prepare("SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND is_read = 0");
+    $unread_stmt->execute([$user_id]);
+    $unread_result = $unread_stmt->fetch(PDO::FETCH_ASSOC);
+    $unread_count = $unread_result['count'];
+    
 } catch (PDOException $e) {
-    $user_name = 'User';
+    error_log("Error fetching notifications: " . $e->getMessage());
 }
 
-function getNotificationIcon($type) {
-    $icons = [
-        'course_recommendation' => '📚',
-        'quiz_recommendation' => '🎯',
-        'skill_assessment' => '📊',
-        'progress_update' => '📈',
-        'career_opportunity' => '🚀',
-        'milestone_achieved' => '🏆',
-        'system_update' => '🔔',
-        'reminder' => '⏰'
-    ];
-    return isset($icons[$type]) ? $icons[$type] : '📌';
-}
-
-function getNotificationTypeLabel($type) {
-    $labels = [
-        'course_recommendation' => 'Course Recommendations',
-        'quiz_recommendation' => 'Quiz Suggestions',
-        'skill_assessment' => 'Skill Assessment',
-        'progress_update' => 'Progress Updates',
-        'career_opportunity' => 'Career Opportunities',
-        'milestone_achieved' => 'Achievements',
-        'system_update' => 'System Updates',
-        'reminder' => 'Reminders'
-    ];
-    return isset($labels[$type]) ? $labels[$type] : 'Notifications';
-}
-
-function getPriorityClass($priority) {
-    switch (strtolower($priority)) {
-        case 'urgent': return 'priority-urgent';
-        case 'high': return 'priority-high';
-        case 'medium': return 'priority-medium';
-        case 'low': return 'priority-low';
-        default: return 'priority-medium';
+// Create sample notification if user has none (for demo purposes)
+if (empty($notifications)) {
+    try {
+        require_once 'includes/SimpleNotifications.php';
+        createSampleNotifications($pdo, $user_id);
+        
+        // Re-fetch notifications
+        $stmt = $pdo->prepare("SELECT * FROM user_notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50");
+        $stmt->execute([$user_id]);
+        $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Update unread count
+        $unread_stmt = $pdo->prepare("SELECT COUNT(*) as count FROM user_notifications WHERE user_id = ? AND is_read = 0");
+        $unread_stmt->execute([$user_id]);
+        $unread_result = $unread_stmt->fetch(PDO::FETCH_ASSOC);
+        $unread_count = $unread_result['count'];
+        
+    } catch (Exception $e) {
+        error_log("Error creating sample notifications: " . $e->getMessage());
     }
 }
 
+// Helper function to get notification icon
+function getNotificationIcon($type) {
+    switch ($type) {
+        case 'message_sent':
+            return '<i class="fas fa-paper-plane"></i>';
+        case 'enrollment_submitted':
+            return '<i class="fas fa-file-alt"></i>';
+        case 'enrollment_accepted':
+            return '<i class="fas fa-check-circle"></i>';
+        case 'enrollment_rejected':
+            return '<i class="fas fa-times-circle"></i>';
+        case 'enrollment_under_review':
+            return '<i class="fas fa-clock"></i>';
+        default:
+            return '<i class="fas fa-bell"></i>';
+    }
+}
+
+// Helper function to get notification color class
+function getNotificationClass($type) {
+    switch ($type) {
+        case 'message_sent':
+            return 'notification-info';
+        case 'enrollment_submitted':
+            return 'notification-info';
+        case 'enrollment_accepted':
+            return 'notification-success';
+        case 'enrollment_rejected':
+            return 'notification-danger';
+        case 'enrollment_under_review':
+            return 'notification-warning';
+        default:
+            return 'notification-info';
+    }
+}
+
+// Helper function to format time ago
 function timeAgo($datetime) {
     $time = time() - strtotime($datetime);
     
-    if ($time < 60) return 'just now';
+    if ($time < 60) return 'Just now';
     if ($time < 3600) return floor($time/60) . ' minutes ago';
     if ($time < 86400) return floor($time/3600) . ' hours ago';
     if ($time < 2592000) return floor($time/86400) . ' days ago';
@@ -127,23 +129,525 @@ function timeAgo($datetime) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notifications - BeThePro</title>
-    <link rel="stylesheet" href="css/notifications.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title><?php echo $unread_count > 0 ? "({$unread_count}) " : ""; ?>Notifications - BeThePro's</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .notifications-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        
+        .notifications-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .notifications-header h1 {
+            color: #333;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .unread-count {
+            background: #e74c3c;
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-left: 1rem;
+        }
+        
+        .notifications-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        
+        .notifications-list {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .notifications-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .notifications-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        .notifications-list::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 10px;
+        }
+        
+        .notifications-list::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #5a67d8, #6b46c1);
+        }
+        
+        .scroll-indicator {
+            position: sticky;
+            bottom: 0;
+            background: linear-gradient(to top, rgba(255,255,255,1), rgba(255,255,255,0));
+            padding: 10px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #666;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .notification-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 1.5rem;
+            border-bottom: 1px solid #eee;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .notification-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .notification-item.unread {
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.05), rgba(255,255,255,0.05));
+            border-left: 4px solid #667eea;
+        }
+        
+        .notification-icon {
+            font-size: 1.5rem;
+            margin-right: 1rem;
+            margin-top: 0.2rem;
+        }
+        
+        .notification-success .notification-icon {
+            color: #28a745;
+        }
+        
+        .notification-danger .notification-icon {
+            color: #dc3545;
+        }
+        
+        .notification-warning .notification-icon {
+            color: #ffc107;
+        }
+        
+        .notification-info .notification-icon {
+            color: #17a2b8;
+        }
+        
+        .notification-content {
+            flex-grow: 1;
+        }
+        
+        .notification-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+        
+        .notification-message {
+            color: #666;
+            line-height: 1.5;
+            margin-bottom: 0.5rem;
+        }
+        
+        .notification-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            color: #999;
+        }
+        
+        .notification-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .btn-sm {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.8rem;
+            border-radius: 15px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #ddd;
+        }
+    </style>
 </head>
 <body>
     <?php include 'assets/header.php'; ?>
     
     <div class="notifications-container">
         <div class="notifications-header">
-            <div class="header-content">
-                <h1>Your Notifications</h1>
-                <p>Stay updated on your learning journey and career progress</p>
+            <h1>
+                <i class="fas fa-bell"></i> 
+                Notifications
+                <?php if ($unread_count > 0): ?>
+                    <span class="unread-count"><?php echo $unread_count; ?> new</span>
+                <?php endif; ?>
+            </h1>
+            <p>Stay updated on your messages, enrollments, and account activities</p>
+        </div>
+
+        <?php if (!empty($notifications)): ?>
+        <div class="notifications-actions">
+            <div>
+                <span><strong><?php echo count($notifications); ?></strong> total notifications</span>
+                <span id="scrollProgress" class="scroll-progress" style="margin-left: 1rem; color: #666; font-size: 0.9rem;"></span>
             </div>
+            <div>
+                <?php if ($unread_count > 0): ?>
+                <button id="jumpToUnread" class="btn btn-primary btn-sm" style="margin-right: 0.5rem;">
+                    <i class="fas fa-arrow-down"></i> Jump to First Unread
+                </button>
+                <form method="POST" style="display: inline;">
+                    <button type="submit" name="mark_all_read" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-check-double"></i> Mark All Read
+                    </button>
+                </form>
+                <?php endif; ?>
+                <a href="index.php" class="btn btn-primary btn-sm">
+                    <i class="fas fa-home"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+
+        <div class="notifications-list">
+            <?php foreach ($notifications as $notification): ?>
+            <div class="notification-item <?php echo !$notification['is_read'] ? 'unread' : ''; ?> <?php echo getNotificationClass($notification['notification_type']); ?>">
+                <div class="notification-icon">
+                    <?php echo getNotificationIcon($notification['notification_type']); ?>
+                </div>
+                <div class="notification-content">
+                    <div class="notification-title">
+                        <?php echo htmlspecialchars($notification['title']); ?>
+                        <?php if (!$notification['is_read']): ?>
+                            <span style="color: #e74c3c; font-size: 0.8rem;">(New)</span>
+                        <?php endif; ?>
+                    </div>
+                    <div class="notification-message">
+                        <?php echo htmlspecialchars($notification['message']); ?>
+                    </div>
+                    <div class="notification-meta">
+                        <span><?php echo timeAgo($notification['created_at']); ?></span>
+                        <div class="notification-actions">
+                            <?php if (!$notification['is_read']): ?>
+                            <form method="POST" style="display: inline;">
+                                <input type="hidden" name="notification_id" value="<?php echo $notification['id']; ?>">
+                                <button type="submit" name="mark_read" class="btn btn-secondary btn-sm">
+                                    <i class="fas fa-check"></i> Mark Read
+                                </button>
+                            </form>
+                            <?php else: ?>
+                            <span style="color: #28a745; font-size: 0.8rem;">
+                                <i class="fas fa-check"></i> Read
+                            </span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+        <?php else: ?>
+        <div class="notifications-list">
+            <div class="empty-state">
+                <i class="fas fa-bell-slash"></i>
+                <h3>No Notifications Yet</h3>
+                <p>You'll see notifications here when you send messages, submit enrollments, or receive updates from our team.</p>
+                <a href="index.php" class="btn btn-primary">
+                    <i class="fas fa-home"></i> Go to Dashboard
+                </a>
+            </div>
+        </div>
+        <?php endif; ?>
+    </div>
+
+    <?php include 'assets/footer.php'; ?>
+
+    <!-- Scroll to Top Button -->
+    <div id="scrollToTop" class="scroll-to-top">
+        <i class="fas fa-chevron-up"></i>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const notificationsList = document.querySelector('.notifications-list');
+            const scrollToTopBtn = document.getElementById('scrollToTop');
+            const scrollProgress = document.getElementById('scrollProgress');
             
-            <div class="notification-stats">
-                <div class="stat-item">
-                    <span class="stat-number"><?php echo count($recent_notifications); ?></span>
+            // Show/hide scroll to top button and update progress based on scroll position
+            if (notificationsList) {
+                notificationsList.addEventListener('scroll', function() {
+                    const scrollTop = this.scrollTop;
+                    const scrollHeight = this.scrollHeight;
+                    const clientHeight = this.clientHeight;
+                    const scrollPercent = Math.round((scrollTop / (scrollHeight - clientHeight)) * 100);
+                    
+                    // Update scroll progress
+                    if (scrollProgress && scrollHeight > clientHeight) {
+                        scrollProgress.textContent = `• ${scrollPercent}% scrolled`;
+                    }
+                    
+                    // Show/hide scroll to top button
+                    if (scrollTop > 200) {
+                        scrollToTopBtn.classList.add('show');
+                    } else {
+                        scrollToTopBtn.classList.remove('show');
+                    }
+                });
+                
+                // Smooth scroll to top functionality
+                scrollToTopBtn.addEventListener('click', function() {
+                    notificationsList.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                });
+            }
+            
+            // Jump to first unread notification
+            const jumpToUnreadBtn = document.getElementById('jumpToUnread');
+            if (jumpToUnreadBtn) {
+                jumpToUnreadBtn.addEventListener('click', function() {
+                    const firstUnread = document.querySelector('.notification-item.unread');
+                    if (firstUnread) {
+                        firstUnread.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center'
+                        });
+                        
+                        // Highlight the notification briefly
+                        firstUnread.style.boxShadow = '0 0 20px rgba(102, 126, 234, 0.5)';
+                        setTimeout(() => {
+                            firstUnread.style.boxShadow = '';
+                        }, 2000);
+                    }
+                });
+                
+                // Add scroll indicator if content overflows
+                if (notificationsList.scrollHeight > notificationsList.clientHeight) {
+                    const scrollIndicator = document.createElement('div');
+                    scrollIndicator.className = 'scroll-indicator';
+                    scrollIndicator.innerHTML = '<i class="fas fa-chevron-down"></i> Scroll for more notifications';
+                    notificationsList.appendChild(scrollIndicator);
+                    
+                    // Hide indicator when scrolled to bottom
+                    notificationsList.addEventListener('scroll', function() {
+                        const isAtBottom = this.scrollTop + this.clientHeight >= this.scrollHeight - 10;
+                        scrollIndicator.style.opacity = isAtBottom ? '0' : '1';
+                    });
+                }
+            }
+            
+            // Smooth scrolling for notification items
+            const notificationItems = document.querySelectorAll('.notification-item');
+            notificationItems.forEach(function(item, index) {
+                item.style.animationDelay = (index * 0.1) + 's';
+                item.classList.add('fade-in');
+                
+                // Add keyboard navigation
+                item.setAttribute('tabindex', '0');
+                item.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        const button = this.querySelector('button[name="mark_read"]');
+                        if (button) {
+                            button.click();
+                        }
+                    }
+                });
+            });
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                // Ctrl/Cmd + Home: Scroll to top
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Home' && notificationsList) {
+                    e.preventDefault();
+                    notificationsList.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+                
+                // Ctrl/Cmd + End: Scroll to bottom
+                if ((e.ctrlKey || e.metaKey) && e.key === 'End' && notificationsList) {
+                    e.preventDefault();
+                    notificationsList.scrollTo({ top: notificationsList.scrollHeight, behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
+
+    <style>
+        /* Scroll to Top Button */
+        .scroll-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px);
+            z-index: 1000;
+        }
+        
+        .scroll-to-top.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        .scroll-to-top:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .scroll-to-top i {
+            font-size: 1.2rem;
+        }
+        
+        /* Fade in animation for notification items */
+        .notification-item {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.6s ease forwards;
+        }
+        
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Enhanced scroll indicator */
+        .scroll-indicator {
+            transition: opacity 0.3s ease;
+            background: linear-gradient(to top, rgba(255,255,255,0.95), rgba(255,255,255,0));
+            backdrop-filter: blur(5px);
+        }
+        
+        .scroll-indicator i {
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+        
+        /* Responsive adjustments for mobile */
+        @media (max-width: 768px) {
+            .notifications-list {
+                max-height: 70vh;
+            }
+            
+            .scroll-to-top {
+                bottom: 20px;
+                right: 20px;
+                width: 45px;
+                height: 45px;
+            }
+            
+            .scroll-to-top i {
+                font-size: 1rem;
+            }
+            
+            .notifications-container {
+                padding: 0 0.5rem;
+            }
+        }
+        
+        /* Smooth scrolling for the entire page */
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        /* Custom focus styles for accessibility */
+        .scroll-to-top:focus {
+            outline: 2px solid #667eea;
+            outline-offset: 2px;
+        }
+        
+        .notification-item:focus-within {
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+            border-radius: 8px;
+        }
+    </style>
+
+</body>
+</html>
                     <span class="stat-label">Total Notifications</span>
                 </div>
                 <div class="stat-item">
@@ -170,7 +674,7 @@ function timeAgo($datetime) {
         
         <?php if (empty($recent_notifications)): ?>
         <div class="empty-state">
-            <div class="empty-icon">🔔</div>
+            <div class="empty-icon"><i class="fas fa-bell"></i></div>
             <h3>No Notifications Yet</h3>
             <p>Complete your skill assessment to start receiving personalized notifications about courses, quizzes, and career opportunities!</p>
             <a href="skill-assessment.php" class="btn btn-primary">Take Skill Assessment</a>

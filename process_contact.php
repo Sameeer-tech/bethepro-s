@@ -255,6 +255,30 @@ try {
         // Generate message ID for reference
         $messageId = 'MSG' . date('Ymd') . rand(1000, 9999);
         
+        // Create user notification if user is logged in
+        if (isset($_SESSION['user_id'])) {
+            try {
+                // Ensure user_notifications table exists
+                $pdo->query("SELECT 1 FROM user_notifications LIMIT 1");
+                
+                // Create notification
+                $notificationStmt = $pdo->prepare("
+                    INSERT INTO user_notifications (user_id, notification_type, title, message, priority, created_at) 
+                    VALUES (?, ?, ?, ?, ?, NOW())
+                ");
+                $notificationStmt->execute([
+                    $_SESSION['user_id'],
+                    'message_sent',
+                    'Message Sent Successfully',
+                    "Your message has been sent successfully! Our team will review your message and get back to you within 24 hours. Reference ID: {$messageId}",
+                    'medium'
+                ]);
+            } catch (PDOException $e) {
+                // Table doesn't exist or other error, but don't fail the main process
+                error_log("Failed to create user notification: " . $e->getMessage());
+            }
+        }
+        
         // Success - show professional success page
         ?>
         <!DOCTYPE html>
@@ -434,7 +458,7 @@ try {
                         <i class="fas fa-paper-plane"></i>
                     </div>
                     
-                    <h1 class="success-title">✅ Message Sent Successfully!</h1>
+                    <h1 class="success-title"><i class="fas fa-check-circle"></i> Message Sent Successfully!</h1>
                     
                     <p class="success-message">
                         Thank you for contacting BeThePro's! Your message has been received and our team will respond to you shortly.
@@ -611,7 +635,7 @@ try {
                         <i class="fas fa-exclamation-triangle"></i>
                     </div>
                     
-                    <h1 class="error-title">❌ Message Failed</h1>
+                    <h1 class="error-title"><i class="fas fa-times-circle"></i> Message Failed</h1>
                     
                     <p class="error-message">
                         We're sorry, but there was an error sending your message. Please try again or contact us directly.

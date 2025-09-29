@@ -129,24 +129,92 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Generate enrollment ID
         $enrollmentId = 'ENR' . date('Ymd') . rand(1000, 9999);
         
+        // Get user_id if user is logged in
+        $user_id = null;
+        if (isset($_SESSION['user_id'])) {
+            $user_id = $_SESSION['user_id'];
+        }
+        
         // Insert into database
         $stmt = $pdo->prepare("
             INSERT INTO enrollments (
-                enrollment_id, first_name, last_name, email, phone, country, 
+                enrollment_id, user_id, first_name, last_name, email, phone, country, 
                 experience_level, schedule_preference, career_goals, 
                 payment_method, additional_services, newsletter_subscription,
                 enrollment_date, status
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), 'pending'
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), 'pending'
             )
         ");
         
         $result = $stmt->execute([
-            $enrollmentId, $firstName, $lastName, $email, $phone, $country,
+            $enrollmentId, $user_id, $firstName, $lastName, $email, $phone, $country,
             $experience, $schedule, $goals, $paymentMethod, '[]', $newsletter
         ]);
         
         if ($result) {
+            // Create admin_notifications table if it doesn't exist
+            try {
+                $pdo->query("SELECT 1 FROM admin_notifications LIMIT 1");
+            } catch (PDOException $e) {
+                // Create admin_notifications table
+                $createAdminNotificationSQL = "
+                    CREATE TABLE admin_notifications (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        notification_type VARCHAR(50) NOT NULL,
+                        title VARCHAR(200) NOT NULL,
+                        message TEXT NOT NULL,
+                        enrollment_id VARCHAR(50),
+                        priority ENUM('low', 'medium', 'high') DEFAULT 'medium',
+                        is_read TINYINT(1) DEFAULT 0,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        INDEX idx_enrollment_id (enrollment_id),
+                        INDEX idx_is_read (is_read)
+                    )
+                ";
+                $pdo->exec($createAdminNotificationSQL);
+            }
+            
+            // Send notification to admin about new enrollment
+            try {
+                $adminNotificationMessage = "New enrollment received from {$firstName} {$lastName} ({$email}). Enrollment ID: {$enrollmentId}. Experience Level: {$experience}. Please review and take action.";
+                
+                $adminNotificationStmt = $pdo->prepare("
+                    INSERT INTO admin_notifications (notification_type, title, message, enrollment_id, priority, created_at) 
+                    VALUES (?, ?, ?, ?, ?, NOW())
+                ");
+                $adminNotificationStmt->execute([
+                    'new_enrollment',
+                    'New Enrollment Received',
+                    $adminNotificationMessage,
+                    $enrollmentId,
+                    'high'
+                ]);
+            } catch (Exception $e) {
+                error_log("Failed to create admin notification: " . $e->getMessage());
+            }
+            
+            // Create user notification for enrollment submission
+            if ($user_id) {
+                try {
+                    $userNotificationStmt = $pdo->prepare("
+                        INSERT INTO user_notifications (user_id, notification_type, title, message, enrollment_id, priority, created_at) 
+                        VALUES (?, ?, ?, ?, ?, ?, NOW())
+                    ");
+                    $userNotificationStmt->execute([
+                        $user_id,
+                        'enrollment_submitted',
+                        'Enrollment Submitted Successfully',
+                        "Your enrollment has been submitted successfully! Enrollment ID: {$enrollmentId}. Our team will review your application and contact you within 24 hours.",
+                        $enrollmentId,
+                        'high'
+                    ]);
+                } catch (Exception $e) {
+                    error_log("Failed to create user enrollment notification: " . $e->getMessage());
+                }
+            }
+            
             // Success - show professional alert page
             ?>
             <!DOCTYPE html>
@@ -333,7 +401,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </p>
                         
                         <div class="enrollment-id">
-                            <strong>📝 Enrollment ID: <?php echo $enrollmentId; ?></strong>
+                            <strong>📝 Enrollment ID: <?php echo htmlspecialchars($enrollmentId); ?></strong>
                         </div>
                         
                         <div class="next-steps">
@@ -341,9 +409,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <ul>
                                 <li>📧 You'll receive a confirmation email shortly</li>
                                 <li>📞 Our team will call you within 24 hours</li>
-                                <li>📚 Course materials will be shared after consultation</li>
+                                <li><i class="fas fa-book"></i> Course materials will be shared after consultation</li>
                                 <li>💳 Payment details will be discussed during the call</li>
-                                <li>🎯 We'll help you create a personalized learning path</li>
+                                <li><i class="fas fa-bullseye"></i> We'll help you create a personalized learning path</li>
                             </ul>
                         </div>
                         
@@ -510,7 +578,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <i class="fas fa-exclamation-triangle"></i>
                     </div>
                     
-                    <h1 class="error-title">❌ Enrollment Failed</h1>
+                    <h1 class="error-title"><i class="fas fa-times-circle"></i> Enrollment Failed</h1>
                     
                     <p class="error-message">
                         We're sorry, but there was an error processing your enrollment. Please try again or contact our support team for assistance.
